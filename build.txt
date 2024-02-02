@@ -1,0 +1,3 @@
+displayName = Biome Colored Lava
+author = Lion8cake
+version = 0.1
