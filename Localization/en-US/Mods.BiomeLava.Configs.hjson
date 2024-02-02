@@ -1,0 +1,34 @@
+BiomeLavaConfig: {
+	DisplayName: Biome Lava Config
+	Headers.LavaStyles: Lava Styles Header
+
+	CorruptionLava: {
+		Label: Corruption Lava
+		Tooltip: ""
+	}
+
+	CrimsonLava: {
+		Label: Crimson Lava
+		Tooltip: ""
+	}
+
+	DesertLava: {
+		Label: Desert Lava
+		Tooltip: ""
+	}
+
+	HallowLava: {
+		Label: Hallow Lava
+		Tooltip: ""
+	}
+
+	IceLava: {
+		Label: Ice Lava
+		Tooltip: ""
+	}
+
+	JungleLava: {
+		Label: Jungle Lava
+		Tooltip: ""
+	}
+}
