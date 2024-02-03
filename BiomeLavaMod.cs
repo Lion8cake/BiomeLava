@@ -60,6 +60,11 @@ public partial class BiomeLavaMod : Mod
         // below where they actually were positioned.
         // To find it, check the GitHub commit history.
 
+        // Lava falls
+        On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects += DrawLavaFall;
+        On_WaterfallManager.AddLight += AddLavaFallLight;
+        On_WaterfallManager.StylizeColor += SetLavaFallColor;
+
         IL_Main.DoDraw += IL_Main_DoDraw;
         IL_Main.RenderWater += IL_Main_RenderWater;
         IL_Main.RenderBackground += IL_Main_RenderBackground;
@@ -71,9 +76,6 @@ public partial class BiomeLavaMod : Mod
 
         On_TileLightScanner.ApplyLiquidLight += LavaLightEditor;
 
-        On_WaterfallManager.AddLight += LavafallLightEditor;
-        On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects += LavafallRedrawer;
-        On_WaterfallManager.StylizeColor += WaterfallGlowMaskEditor;
 
         IL_Main.oldDrawWater += BlockRetroLightingLava;
         IL_LiquidRenderer.InternalPrepareDraw += LavaBubbleReplacer;
@@ -87,6 +89,11 @@ public partial class BiomeLavaMod : Mod
 
     public override void Unload()
     {
+        // Lava falls
+        On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects -= DrawLavaFall;
+        On_WaterfallManager.AddLight -= AddLavaFallLight;
+        On_WaterfallManager.StylizeColor -= SetLavaFallColor;
+
         IL_Main.DoDraw -= IL_Main_DoDraw;
         IL_Main.RenderWater -= IL_Main_RenderWater;
         IL_Main.RenderBackground -= IL_Main_RenderBackground;
@@ -97,10 +104,6 @@ public partial class BiomeLavaMod : Mod
         IL_TileDrawing.Draw -= AddTileLiquidDrawing;
 
         On_TileLightScanner.ApplyLiquidLight -= LavaLightEditor;
-
-        On_WaterfallManager.AddLight -= LavafallLightEditor;
-        On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects -= LavafallRedrawer;
-        On_WaterfallManager.StylizeColor -= WaterfallGlowMaskEditor;
 
         IL_Main.oldDrawWater -= BlockRetroLightingLava;
         IL_LiquidRenderer.InternalPrepareDraw -= LavaBubbleReplacer;
@@ -116,41 +119,11 @@ public partial class BiomeLavaMod : Mod
 
     #region ILEdits & Detours
 
-    private static Color WaterfallGlowMaskEditor(On_WaterfallManager.orig_StylizeColor orig, float alpha, int maxSteps, int waterfallType, int y, int s, Tile tileCache,
-        Color aColor)
+    #region Lava Falls
+
+    private static void DrawLavaFall(On_WaterfallManager.orig_DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects orig, WaterfallManager self, int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
     {
-        if (Active && Style.LavaFallUsesGlowMask)
-            return aColor;
-
-        return orig.Invoke(alpha, maxSteps, waterfallType, y, s, tileCache, aColor);
-    }
-
-    private void LavaDropletReplacer(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdarg(out _), static i => i.MatchLdcI4(374), i => i.MatchBneUn(out _), static i => i.MatchLdcI4(716));
-        c.EmitDelegate<Func<int, int>>(static type => Active ? Style.DropletGoreID : type);
-    }
-
-    private void LavafallLightEditor(On_WaterfallManager.orig_AddLight orig, int waterfallType, int x, int y)
-    {
-        if (waterfallType == WaterStyleID.Lava && Active)
-        {
-            float r8;
-            var num3 = r8 = (Style.LightColor.R / 255f + (float)(270 - Main.mouseTextColor) / 900f) * 0.4f;
-            var g8 = num3 * Style.LightColor.G / 255f;
-            var b8 = num3 * Style.LightColor.B / 255f;
-            Lighting.AddLight(x, y, r8, g8, b8);
-            return;
-        }
-
-        orig.Invoke(waterfallType, x, y);
-    }
-
-    private void LavafallRedrawer(On_WaterfallManager.orig_DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects orig, WaterfallManager self,
-        int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
-    {
-        if (waterfallType == 1 && Active)
+        if (Active && waterfallType == WaterStyleID.Lava)
         {
             // TODO: lavaLiquidAlpha
             Main.spriteBatch.Draw(Style.LavaFallTexture.Value, position, sourceRect, color, 0f, default, 1f, effects, 0f);
@@ -159,6 +132,39 @@ public partial class BiomeLavaMod : Mod
 
         orig.Invoke(self, waterfallType, x, y, opacity, position, sourceRect, color, effects);
     }
+
+    private static void AddLavaFallLight(On_WaterfallManager.orig_AddLight orig, int waterfallType, int x, int y)
+    {
+        if (Active && waterfallType == WaterStyleID.Lava)
+        {
+            var color = Style.LightColor.ToVector3();
+            var r = (color.X + (270 - Main.mouseTextColor) / 900f) * 0.4f;
+            var g = r * color.Y;
+            var b = r * color.Z;
+            Lighting.AddLight(x, y, r, g, b);
+            return;
+        }
+
+        orig.Invoke(waterfallType, x, y);
+    }
+
+    private static Color SetLavaFallColor(On_WaterfallManager.orig_StylizeColor orig, float alpha, int maxSteps, int waterfallType, int y, int s, Tile tileCache, Color aColor)
+    {
+        if (Active && Style.LavaFallUsesGlowMask)
+            aColor = Color.White; // Change the color from the lighting color to solid white
+
+        return orig.Invoke(alpha, maxSteps, waterfallType, y, s, tileCache, aColor);
+    }
+
+    #endregion
+
+    private void LavaDropletReplacer(ILContext il)
+    {
+        var c = new ILCursor(il);
+        c.GotoNext(MoveType.After, i => i.MatchLdarg(out _), static i => i.MatchLdcI4(374), i => i.MatchBneUn(out _), static i => i.MatchLdcI4(716));
+        c.EmitDelegate<Func<int, int>>(static type => Active ? Style.DropletGoreID : type);
+    }
+
 
     private void SplashItemLava(ILContext il)
     {
@@ -319,10 +325,7 @@ public partial class BiomeLavaMod : Mod
         c.EmitLdloc(12);
         c.EmitLdloc(13);
         c.EmitLdloc(14);
-        c.EmitDelegate((Vector2 unscaledPosition, Vector2 vector, int j, int i, Tile tile) =>
-        {
-            DrawTile_LiquidBehindTile(false, false, Style, unscaledPosition, vector, j, i, tile);
-        });
+        c.EmitDelegate((Vector2 unscaledPosition, Vector2 vector, int j, int i, Tile tile) => { DrawTile_LiquidBehindTile(false, false, Style, unscaledPosition, vector, j, i, tile); });
     }
 
     private void BlockRetroLightingLava(ILContext il)
