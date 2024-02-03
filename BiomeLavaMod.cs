@@ -50,7 +50,7 @@ public partial class BiomeLavaMod : Mod
 
     // TODO: use curried function for ILEdits to reduce code duplication
 
-    #region Preparing IL Edits & Detours
+    #region Preparing IL Edits and Detours
 
     public override void Load()
     {
@@ -65,6 +65,10 @@ public partial class BiomeLavaMod : Mod
         On_WaterfallManager.AddLight += AddLavaFallLight;
         On_WaterfallManager.StylizeColor += SetLavaFallColor;
 
+        // Bubbles and Droplets
+        IL_TileDrawing.EmitLiquidDrops += ReplaceLavaDroplet;
+        IL_LiquidRenderer.InternalPrepareDraw += ReplaceLavaBubble;
+
         IL_Main.DoDraw += IL_Main_DoDraw;
         IL_Main.RenderWater += IL_Main_RenderWater;
         IL_Main.RenderBackground += IL_Main_RenderBackground;
@@ -78,13 +82,10 @@ public partial class BiomeLavaMod : Mod
 
 
         IL_Main.oldDrawWater += BlockRetroLightingLava;
-        IL_LiquidRenderer.InternalPrepareDraw += LavaBubbleReplacer;
         IL_Player.Update += SplashPlayerLava;
         IL_NPC.Collision_WaterCollision += SplashNPCLava;
         IL_Projectile.Update += SplashProjectileLava;
         IL_Item.MoveInWorld += SplashItemLava;
-
-        IL_TileDrawing.EmitLiquidDrops += LavaDropletReplacer;
     }
 
     public override void Unload()
@@ -93,6 +94,10 @@ public partial class BiomeLavaMod : Mod
         On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects -= DrawLavaFall;
         On_WaterfallManager.AddLight -= AddLavaFallLight;
         On_WaterfallManager.StylizeColor -= SetLavaFallColor;
+
+        // Bubbles and Droplets
+        IL_TileDrawing.EmitLiquidDrops -= ReplaceLavaDroplet;
+        IL_LiquidRenderer.InternalPrepareDraw -= ReplaceLavaBubble;
 
         IL_Main.DoDraw -= IL_Main_DoDraw;
         IL_Main.RenderWater -= IL_Main_RenderWater;
@@ -106,18 +111,15 @@ public partial class BiomeLavaMod : Mod
         On_TileLightScanner.ApplyLiquidLight -= LavaLightEditor;
 
         IL_Main.oldDrawWater -= BlockRetroLightingLava;
-        IL_LiquidRenderer.InternalPrepareDraw -= LavaBubbleReplacer;
         IL_Player.Update -= SplashPlayerLava;
         IL_NPC.Collision_WaterCollision -= SplashNPCLava;
         IL_Projectile.Update -= SplashProjectileLava;
         IL_Item.MoveInWorld -= SplashItemLava;
-
-        IL_TileDrawing.EmitLiquidDrops -= LavaDropletReplacer;
     }
 
     #endregion
 
-    #region ILEdits & Detours
+    #region ILEdits and Detours
 
     #region Lava Falls
 
@@ -158,13 +160,31 @@ public partial class BiomeLavaMod : Mod
 
     #endregion
 
-    private void LavaDropletReplacer(ILContext il)
+    #region Bubbles and Droplets
+
+    private static void ReplaceLavaDroplet(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdarg(out _), static i => i.MatchLdcI4(374), i => i.MatchBneUn(out _), static i => i.MatchLdcI4(716));
-        c.EmitDelegate<Func<int, int>>(static type => Active ? Style.DropletGoreID : type);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchLdarg(out _),
+            static i => i.MatchLdcI4(374),
+            static i => i.MatchBneUn(out _),
+            static i => i.MatchLdcI4(716)
+        );
+
+        c.EmitDelegate(static (int type) => Active ? Style.DropletGoreID : type);
     }
 
+    private static void ReplaceLavaBubble(ILContext il)
+    {
+        var c = new ILCursor(il);
+
+        c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(16), i => i.MatchLdcI4(35));
+        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
+        c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(8), i => i.MatchLdcI4(35));
+        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
+    }
 
     private void SplashItemLava(ILContext il)
     {
@@ -242,6 +262,9 @@ public partial class BiomeLavaMod : Mod
         c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
     }
 
+    #endregion
+
+
     private void DrawLavatoCapture(ILContext il)
     {
         var c = new ILCursor(il);
@@ -290,15 +313,6 @@ public partial class BiomeLavaMod : Mod
 
             if (lightColor.Z < num3) lightColor.Z = num3;
         }
-    }
-
-    private void LavaBubbleReplacer(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(16), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
-        c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(8), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
     }
 
     private void BlockLavaDrawingForSlopes(On_TileDrawing.orig_DrawTile_LiquidBehindTile orig, TileDrawing self, bool solidLayer, bool inFrontOfPlayers,
