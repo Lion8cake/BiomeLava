@@ -6,6 +6,10 @@ namespace BiomeLava;
 // It is just wrapper methods for Mod.Call so you are less likely to make a mistake
 public static class BiomeLavaAPI
 {
+    public const string BiomeLavaModName = "BiomeLava";
+    public static bool BiomeLavaModEnabled => ModLoader.HasMod(BiomeLavaModName);
+    public static Mod BiomeLavaMod => ModLoader.TryGetMod(BiomeLavaModName, out var mod) ? mod : null;
+
     public static void AddLavaStyle(
         Asset<Texture2D> lavaTexture,
         Asset<Texture2D> lavaBlockTexture,
@@ -17,7 +21,7 @@ public static class BiomeLavaAPI
         Color lightColor,
         Func<bool> inZone)
     {
-        ModLoader.GetMod("BiomeLava").Call(nameof(AddLavaStyle), lavaTexture, lavaBlockTexture, lavaSlopeTexture, lavaFallTexture, lavaFallUsesGlowMask, splashDustID, dropletGoreID, lightColor, inZone);
+        BiomeLavaMod.Call(nameof(AddLavaStyle), lavaTexture, lavaBlockTexture, lavaSlopeTexture, lavaFallTexture, lavaFallUsesGlowMask, splashDustID, dropletGoreID, lightColor, inZone);
     }
 }
 
