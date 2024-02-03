@@ -36,7 +36,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.GoreType<CorruptionDroplet>(),
             true,
             new Color(0.33f, 0.55f, 0.11f),
-            static () => Main.LocalPlayer.ZoneCorrupt && BiomeLavaConfig.Instance.CorruptionLava
+            static () => Main.LocalPlayer.ZoneCorrupt && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.CorruptionLava
         );
 
         AddBuiltInLavaStyle(
@@ -45,7 +45,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.GoreType<CrimsonDroplet>(),
             true,
             new Color(0.55f, 0.44f, 0.11f),
-            static () => Main.LocalPlayer.ZoneCrimson && BiomeLavaConfig.Instance.CrimsonLava
+            static () => Main.LocalPlayer.ZoneCrimson && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.CrimsonLava
         );
 
         AddBuiltInLavaStyle(
@@ -54,7 +54,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.GoreType<HallowDroplet>(),
             true,
             new Color(0.33f, 0.77f, 0.99f),
-            static () => Main.LocalPlayer.ZoneHallow && BiomeLavaConfig.Instance.HallowLava
+            static () => Main.LocalPlayer.ZoneHallow && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.HallowLava
         );
 
         AddBuiltInLavaStyle(
@@ -63,7 +63,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.GoreType<JungleDroplet>(),
             false,
             new Color(0.22f, 0.22f, 0.11f),
-            static () => Main.LocalPlayer.ZoneJungle && BiomeLavaConfig.Instance.JungleLava
+            static () => Main.LocalPlayer.ZoneJungle && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.JungleLava
         );
 
         AddBuiltInLavaStyle(
@@ -72,7 +72,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.GoreType<IceDroplet>(),
             false,
             new Color(0.44f, 0.22f, 0.11f),
-            static () => Main.LocalPlayer.ZoneSnow && BiomeLavaConfig.Instance.IceLava
+            static () => Main.LocalPlayer.ZoneSnow && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.IceLava
         );
 
         AddBuiltInLavaStyle(
@@ -81,7 +81,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.GoreType<DesertDroplet>(),
             true,
             new Color(0.77f, 0.44f, 0.11f),
-            static () => Main.LocalPlayer.ZoneDesert && BiomeLavaConfig.Instance.DesertLava
+            static () => Main.LocalPlayer.ZoneDesert && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.DesertLava
         );
 
         #endregion
