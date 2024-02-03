@@ -22,9 +22,10 @@ public static class BiomeLavaAPI
         Func<bool> inZone)
     {
         if (!BiomeLavaModEnabled)
-            throw new InvalidOperationException($"{nameof(BiomeLavaMod)} is not enabled!");
+            return;
 
-        BiomeLavaMod.Call(nameof(AddLavaStyle), lavaTexture, lavaBlockTexture, lavaSlopeTexture, lavaFallTexture, lavaFallUsesGlowMask, splashDustID, dropletGoreID, lightColor, inZone);
+        var message = BiomeLavaMod.Call(nameof(AddLavaStyle), lavaTexture, lavaBlockTexture, lavaSlopeTexture, lavaFallTexture, lavaFallUsesGlowMask, splashDustID, dropletGoreID, lightColor, inZone);
+        BiomeLavaMod.Logger.Info(message);
     }
 }
 
