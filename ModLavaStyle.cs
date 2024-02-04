@@ -11,4 +11,7 @@ public record struct ModLavaStyle(
     int DropletGoreID,
     Color LightColor,
     Func<bool> InZone
-);
+)
+{
+    public int Type { get; internal set; }
+};

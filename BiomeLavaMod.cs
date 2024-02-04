@@ -17,36 +17,15 @@ public partial class BiomeLavaMod : Mod
 
     private static bool Active => LavaStyleLoader.Instance.IsStyleActive;
     private static ModLavaStyle Style => LavaStyleLoader.Instance.ActiveStyle;
+    private static IEnumerable<ModLavaStyle> Styles => LavaStyleLoader.Instance.ActiveStyles;
 
-    // TODO: lavaLiquidAlpha
-    private static float[] lavaLiquidAlpha =
+    private static List<float> LavaAlpha
     {
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-        1f,
-    };
+        get => LavaStyleLoader.Instance.LavaAlpha;
+        set => LavaStyleLoader.Instance.LavaAlpha = value;
+    }
+
+    #region ILEdits and Detours
 
     #region Preparing IL Edits and Detours
 
@@ -113,8 +92,6 @@ public partial class BiomeLavaMod : Mod
     }
 
     #endregion
-
-    #region ILEdits and Detours
 
     #region Lava Falls
 
@@ -543,12 +520,77 @@ public partial class BiomeLavaMod : Mod
 
     #endregion
 
-    private void DrawCapture(ILContext il)
+    #region Drawing
+
+    private static void MainDraw(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, static i => i.MatchLdsfld<Main>("liquidAlpha"), static i => i.MatchCall(out _), static i => i.MatchStloc2());
-        float[] alphaSave = lavaLiquidAlpha.ToArray();
-        c.EmitDelegate(() => { alphaSave = lavaLiquidAlpha.ToArray(); });
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdsfld<Main>("drawToScreen"),
+            static i => i.MatchBrfalse(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawWaters")
+        );
+
+        c.EmitDelegate(static () => DrawLavas(true));
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdsfld<Main>("drawToScreen"),
+            static i => i.MatchBrfalse(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchCall<Main>("DrawWaters")
+        );
+
+        c.EmitDelegate(static () => DrawLavas());
+    }
+
+    private static void RenderWater(ILContext il)
+    {
+        var c = new ILCursor(il);
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchCall<Main>("DrawWaters")
+        );
+
+        c.EmitDelegate(static () => DrawLavas());
+    }
+
+    private static void RenderBackground(ILContext il)
+    {
+        var c = new ILCursor(il);
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawWaters")
+        );
+
+        c.EmitDelegate(static () => DrawLavas(true));
+    }
+
+    private static void DrawCapture(ILContext il)
+    {
+        var c = new ILCursor(il);
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdsfld<Main>("liquidAlpha"),
+            static i => i.MatchCall(out _),
+            static i => i.MatchStloc2()
+        );
+
+        float[] alphaSave = LavaAlpha.ToArray();
+        c.EmitDelegate(() => alphaSave = LavaAlpha.ToArray());
+
         c.GotoNext(
             MoveType.Before,
             static i => i.MatchLdcI4(0),
@@ -561,9 +603,9 @@ public partial class BiomeLavaMod : Mod
 
         c.EmitLdloc(8);
         c.EmitDelegate(
-            (CaptureBiome biome) =>
+            static (CaptureBiome biome) =>
             {
-                // TODO: lavaLiquid alpha either 0f or 1f here
+                // TODO: set lavaLiquid alpha either 0f or 1f here
             }
         );
 
@@ -577,7 +619,8 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchCall<Main>("DrawLiquid")
         );
 
-        c.EmitDelegate(() => { DrawLiquid(true, Style); });
+        c.EmitDelegate(static () => DrawLiquid(true));
+
         c.GotoNext(
             MoveType.After,
             static i => i.MatchLdarg0(),
@@ -593,7 +636,8 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchCall<Main>("DrawLiquid")
         );
 
-        c.EmitDelegate(() => { DrawLiquid(true, Style); });
+        c.EmitDelegate(static () => DrawLiquid(true));
+
         c.GotoNext(
             MoveType.After,
             static i => i.MatchLdarg0(),
@@ -604,7 +648,8 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchCall<Main>("DrawLiquid")
         );
 
-        c.EmitDelegate(() => { DrawLiquid(false, Style); });
+        c.EmitDelegate(static () => DrawLiquid(false));
+
         c.GotoNext(
             MoveType.After,
             static i => i.MatchLdarg0(),
@@ -616,12 +661,45 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchCall<Main>("DrawLiquid")
         );
 
-        c.EmitDelegate(() => { DrawLiquid(false, Style); });
-        c.GotoNext(MoveType.After, static i => i.MatchLdloc2(), static i => i.MatchStsfld<Main>("liquidAlpha"));
-        c.EmitDelegate(() => { lavaLiquidAlpha = alphaSave; });
+        c.EmitDelegate(static () => DrawLiquid(false));
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdloc2(),
+            static i => i.MatchStsfld<Main>("liquidAlpha")
+        );
+
+        c.EmitDelegate(() => LavaAlpha = alphaSave.ToList());
     }
 
-    private void BlockLavaDrawingForSlopes(
+    private static void AddTileLiquidDrawing(ILContext il)
+    {
+        var c = new ILCursor(il);
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdarg1(),
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchLdarg(out _),
+            static i => i.MatchLdloc1(),
+            static i => i.MatchLdloc2(),
+            static i => i.MatchLdloc(12),
+            static i => i.MatchLdloc(13),
+            static i => i.MatchLdloc(14),
+            static i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile")
+        );
+
+        c.EmitLdloc1();
+        c.EmitLdloc2();
+        c.EmitLdloc(12);
+        c.EmitLdloc(13);
+        c.EmitLdloc(14);
+
+        c.EmitDelegate(static (Vector2 unscaledPosition, Vector2 vector, int j, int i, Tile tile) => DrawTile_LiquidBehindTile(false, false, unscaledPosition, vector, j, i, tile));
+    }
+
+    private static void BlockLavaDrawingForSlopes(
         On_TileDrawing.orig_DrawTile_LiquidBehindTile orig,
         TileDrawing self,
         bool solidLayer,
@@ -637,6 +715,7 @@ public partial class BiomeLavaMod : Mod
         var tile2 = Main.tile[tileX - 1, tileY];
         var tile3 = Main.tile[tileX, tileY - 1];
         var tile4 = Main.tile[tileX, tileY + 1];
+
         if (tileCache.LiquidType == LiquidID.Lava || tile.LiquidType == LiquidID.Lava || tile2.LiquidType == LiquidID.Lava || tile3.LiquidType == LiquidID.Lava || tile4.LiquidType == LiquidID.Lava)
             return;
 
@@ -653,71 +732,11 @@ public partial class BiomeLavaMod : Mod
         );
     }
 
-    private void AddTileLiquidDrawing(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(
-            MoveType.After,
-            static i => i.MatchLdarg0(),
-            static i => i.MatchLdarg1(),
-            static i => i.MatchLdcI4(0),
-            static i => i.MatchLdarg(out int waterStyleOverride),
-            static i => i.MatchLdloc1(),
-            static i => i.MatchLdloc2(),
-            static i => i.MatchLdloc(12),
-            static i => i.MatchLdloc(13),
-            static i => i.MatchLdloc(14),
-            static i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile")
-        );
+    #endregion
 
-        c.EmitLdloc1();
-        c.EmitLdloc2();
-        c.EmitLdloc(12);
-        c.EmitLdloc(13);
-        c.EmitLdloc(14);
-        c.EmitDelegate((Vector2 unscaledPosition, Vector2 vector, int j, int i, Tile tile) => { DrawTile_LiquidBehindTile(false, false, Style, unscaledPosition, vector, j, i, tile); });
-    }
+    #region Old Code
 
-    private void MainDraw(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(
-            MoveType.After,
-            static i => i.MatchLdsfld<Main>("drawToScreen"),
-            static i => i.MatchBrfalse(out _),
-            static i => i.MatchLdarg0(),
-            static i => i.MatchLdcI4(1),
-            static i => i.MatchCall<Main>("DrawWaters")
-        );
-
-        c.EmitDelegate(() => { DrawLavas(true); });
-        c.GotoNext(
-            MoveType.After,
-            static i => i.MatchLdsfld<Main>("drawToScreen"),
-            static i => i.MatchBrfalse(out _),
-            static i => i.MatchLdarg0(),
-            static i => i.MatchLdcI4(0),
-            static i => i.MatchCall<Main>("DrawWaters")
-        );
-
-        c.EmitDelegate(() => { DrawLavas(); });
-    }
-
-    private void RenderWater(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchCall<Main>("DrawWaters"));
-        c.EmitDelegate(() => { DrawLavas(); });
-    }
-
-    private void RenderBackground(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchCall<Main>("DrawWaters"));
-        c.EmitDelegate(() => { DrawLavas(true); });
-    }
-
-#if FALSE // Old code
+#if FALSE
     private void BlockLavaDrawing(ILContext il)
     {
         var c = new ILCursor(il);
@@ -734,23 +753,22 @@ public partial class BiomeLavaMod : Mod
 
     #endregion
 
+    #endregion
+
     #region Lava Drawing
 
-    private void DrawLavas(bool isBackground = false)
+    private static void DrawLavas(bool isBackground = false)
     {
         Main.drewLava = false;
+
         if (!isBackground)
-        {
-            // TODO: lavaLiquidAlpha
-            /*
-            for (var i = 0; i < 7; i++)
+            for (int i = 0; i < LavaStyleLoader.Instance.LavaStyleCount; i++)
             {
-                if (lavaStyle != i)
-                    lavaLiquidAlpha[i] = Math.Max(lavaLiquidAlpha[i] - 0.2f, 0f);
+                if (LavaStyleLoader.Instance.LavaStyles[i].InZone())
+                    LavaAlpha[i] = Math.Max(LavaAlpha[i] - 0.2f, 0f);
                 else
-                    lavaLiquidAlpha[i] = Math.Min(lavaLiquidAlpha[i] + 0.2f, 1f);
-            }//*/
-        }
+                    LavaAlpha[i] = Math.Min(LavaAlpha[i] + 0.2f, 1f);
+            }
 
         if (!Main.drawToScreen && !isBackground)
         {
@@ -767,10 +785,10 @@ public partial class BiomeLavaMod : Mod
             //LiquidRenderer.Instance.PrepareDraw(drawArea);
         }
 
-        DrawLiquid(isBackground, Style, 1f); // TODO: lavaLiquidStyle
+        DrawLiquid(isBackground, 1f); // TODO: lavaLiquidStyle
     }
 
-    protected internal void DrawLiquid(bool bg = false, float Alpha = 1f, bool drawSinglePassLiquids = true)
+    private static void DrawLiquid(bool bg = false, float Alpha = 1f, bool drawSinglePassLiquids = true)
     {
         if (!Lighting.NotRetro)
         {
@@ -789,7 +807,7 @@ public partial class BiomeLavaMod : Mod
             TimeLogger.DrawTime(4, stopwatch.Elapsed.TotalMilliseconds);
     }
 
-    public unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, float globalAlpha, bool isBackgroundDraw)
+    private static unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, float globalAlpha, bool isBackgroundDraw)
     {
         Main.tileBatch.End();
         var drawArea = LiquidRenderer.Instance._drawArea;
@@ -841,7 +859,7 @@ public partial class BiomeLavaMod : Mod
         Main.tileBatch.End();
     }
 
-    public void oldDrawWater(bool bg = false, float Alpha = 1f)
+    private static void oldDrawWater(bool bg = false, float Alpha = 1f)
     {
         float num = 0f;
         float num12 = 99999f;
@@ -1237,7 +1255,7 @@ public partial class BiomeLavaMod : Mod
         Main.drewLava = true;
     }
 
-    public void DrawLiquidBehindTiles(ModLavaStyle style)
+    private static void DrawLiquidBehindTiles()
     {
         var unscaledPosition = Main.Camera.UnscaledPosition;
         Vector2 vector = new((float)Main.offScreenRange, (float)Main.offScreenRange);
@@ -1259,12 +1277,12 @@ public partial class BiomeLavaMod : Mod
             {
                 var tile = Main.tile[j, i];
                 if (tile != null)
-                    DrawTile_LiquidBehindTile(false, false, style, unscaledPosition, vector, j, i, tile);
+                    DrawTile_LiquidBehindTile(false, false, unscaledPosition, vector, j, i, tile);
             }
         }
     }
 
-    private void GetScreenDrawArea(Vector2 screenPosition, Vector2 offSet, out int firstTileX, out int lastTileX, out int firstTileY, out int lastTileY)
+    private static void GetScreenDrawArea(Vector2 screenPosition, Vector2 offSet, out int firstTileX, out int lastTileX, out int firstTileY, out int lastTileY)
     {
         firstTileX = (int)((screenPosition.X - offSet.X) / 16f - 1f);
         lastTileX = (int)((screenPosition.X + (float)Main.screenWidth + offSet.X) / 16f) + 2;
@@ -1293,10 +1311,9 @@ public partial class BiomeLavaMod : Mod
             WorldGen.RefreshSections(firstTileX, firstTileY, lastTileX, lastTileY);
     }
 
-    private void DrawTile_LiquidBehindTile(
+    private static void DrawTile_LiquidBehindTile(
         bool solidLayer,
         bool inFrontOfPlayers,
-        ModLavaStyle style,
         Vector2 screenPosition,
         Vector2 screenOffset,
         int tileX,
@@ -1457,7 +1474,7 @@ public partial class BiomeLavaMod : Mod
         if (flag6)
             for (int i = 0; i < 7 /*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; i++)
             {
-                if (lavaLiquidAlpha[i] > 0f && i != num2)
+                if (LavaAlpha[i] > 0f && i != num2)
                 {
                     DrawPartialLiquid(!solidLayer, tileCache, ref position, ref liquidSize, i, ref vertices);
                     flag7 = true;
@@ -1466,7 +1483,7 @@ public partial class BiomeLavaMod : Mod
             }
 
         var colors = vertices;
-        float num7 = flag7 ? lavaLiquidAlpha[num2] : 1f;
+        float num7 = flag7 ? LavaAlpha[num2] : 1f;
         ref var bottomLeftColor2 = ref colors.BottomLeftColor;
         bottomLeftColor2 *= num7;
         ref var bottomRightColor2 = ref colors.BottomRightColor;
@@ -1478,7 +1495,7 @@ public partial class BiomeLavaMod : Mod
         DrawPartialLiquid(!solidLayer, tileCache, ref position, ref liquidSize, num2, ref colors);
     }
 
-    private void DrawPartialLiquid(bool behindBlocks, Tile tileCache, ref Vector2 position, ref Rectangle liquidSize, int liquidType, ref VertexColors colors)
+    private static void DrawPartialLiquid(bool behindBlocks, Tile tileCache, ref Vector2 position, ref Rectangle liquidSize, int liquidType, ref VertexColors colors)
     {
         int num = (int)tileCache.Slope;
         bool flag = !TileID.Sets.BlocksWaterDrawingBehindSelf[tileCache.TileType];

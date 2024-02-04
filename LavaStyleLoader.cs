@@ -9,16 +9,25 @@ public class LavaStyleLoader : ModSystem
     public static LavaStyleLoader Instance => ModContent.GetInstance<LavaStyleLoader>();
 
     // TODO: priorities, transitions
-    public bool IsStyleActive => ActiveStyle != default;
-    public ModLavaStyle ActiveStyle => _lavaStyles.FirstOrDefault(static l => l.InZone());
+    public bool IsStyleActive => ActiveStyles.Any();
+    public ModLavaStyle ActiveStyle => ActiveStyles.First();
+
+    public IEnumerable<ModLavaStyle> ActiveStyles
+        => _lavaStyles
+            .Where(l => LavaAlpha[l.Type] > 0f)
+            .OrderBy(l => LavaAlpha[l.Type]);
+
+    public List<float> LavaAlpha = new();
 
     public int LavaStyleCount { get; internal set; }
-    public IReadOnlyCollection<ModLavaStyle> LavaStyles => _lavaStyles.AsReadOnly();
+    public IReadOnlyList<ModLavaStyle> LavaStyles => _lavaStyles.AsReadOnly();
     private readonly List<ModLavaStyle> _lavaStyles = new();
 
     public void AddLavaStyle(ModLavaStyle style)
     {
         _lavaStyles.Add(style);
+        style.Type = LavaStyleCount;
+        LavaAlpha.Add(1f);
         LavaStyleCount++;
     }
 
@@ -35,7 +44,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.DustType<CorruptionLavaDust>(),
             ModContent.GoreType<CorruptionDroplet>(),
             true,
-            new Color(0.33f, 0.55f, 0.11f),
+            new(0.33f, 0.55f, 0.11f),
             static () => Main.LocalPlayer.ZoneCorrupt && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.CorruptionLava
         );
 
@@ -44,7 +53,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.DustType<CrimsonLavaDust>(),
             ModContent.GoreType<CrimsonDroplet>(),
             true,
-            new Color(0.55f, 0.44f, 0.11f),
+            new(0.55f, 0.44f, 0.11f),
             static () => Main.LocalPlayer.ZoneCrimson && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.CrimsonLava
         );
 
@@ -53,7 +62,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.DustType<HallowLavaDust>(),
             ModContent.GoreType<HallowDroplet>(),
             true,
-            new Color(0.33f, 0.77f, 0.99f),
+            new(0.33f, 0.77f, 0.99f),
             static () => Main.LocalPlayer.ZoneHallow && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.HallowLava
         );
 
@@ -62,7 +71,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.DustType<JungleLavaDust>(),
             ModContent.GoreType<JungleDroplet>(),
             false,
-            new Color(0.22f, 0.22f, 0.11f),
+            new(0.22f, 0.22f, 0.11f),
             static () => Main.LocalPlayer.ZoneJungle && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.JungleLava
         );
 
@@ -71,7 +80,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.DustType<IceLavaDust>(),
             ModContent.GoreType<IceDroplet>(),
             false,
-            new Color(0.44f, 0.22f, 0.11f),
+            new(0.44f, 0.22f, 0.11f),
             static () => Main.LocalPlayer.ZoneSnow && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.IceLava
         );
 
@@ -80,7 +89,7 @@ public class LavaStyleLoader : ModSystem
             ModContent.DustType<DesertLavaDust>(),
             ModContent.GoreType<DesertDroplet>(),
             true,
-            new Color(0.77f, 0.44f, 0.11f),
+            new(0.77f, 0.44f, 0.11f),
             static () => Main.LocalPlayer.ZoneDesert && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.DesertLava
         );
 
@@ -90,17 +99,19 @@ public class LavaStyleLoader : ModSystem
 
         void AddBuiltInLavaStyle(string name, int splashDustType, int dropletGoreType, bool glowMask, Color lightColor, Func<bool> condition)
         {
-            AddLavaStyle(new ModLavaStyle(
-                ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava"),
-                ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava_Block"),
-                ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava_Slope"),
-                ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava_Waterfall"),
-                glowMask,
-                splashDustType,
-                dropletGoreType,
-                lightColor,
-                condition
-            ));
+            AddLavaStyle(
+                new(
+                    ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava"),
+                    ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava_Block"),
+                    ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava_Slope"),
+                    ModContent.Request<Texture2D>($"BiomeLava/Assets/{name}/{name}Lava_Waterfall"),
+                    glowMask,
+                    splashDustType,
+                    dropletGoreType,
+                    lightColor,
+                    condition
+                )
+            );
         }
     }
 }
