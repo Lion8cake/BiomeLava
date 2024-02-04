@@ -45,7 +45,7 @@ public partial class BiomeLavaMod : Mod
         1f,
         1f,
         1f,
-        1f
+        1f,
     };
 
     #region Preparing IL Edits and Detours
@@ -76,10 +76,10 @@ public partial class BiomeLavaMod : Mod
         IL_Main.oldDrawWater += BlockLavaRetroLighting;
 
         // Drawing
-        IL_Main.DoDraw += IL_Main_DoDraw;
-        IL_Main.RenderWater += IL_Main_RenderWater;
-        IL_Main.RenderBackground += IL_Main_RenderBackground;
-        IL_Main.DrawCapture += DrawLavatoCapture;
+        IL_Main.DoDraw += MainDraw;
+        IL_Main.RenderWater += RenderWater;
+        IL_Main.RenderBackground += RenderBackground;
+        IL_Main.DrawCapture += DrawCapture;
         IL_TileDrawing.Draw += AddTileLiquidDrawing;
         On_TileDrawing.DrawTile_LiquidBehindTile += BlockLavaDrawingForSlopes;
     }
@@ -104,10 +104,10 @@ public partial class BiomeLavaMod : Mod
         IL_Main.oldDrawWater -= BlockLavaRetroLighting;
 
         // Drawing
-        IL_Main.DoDraw -= IL_Main_DoDraw;
-        IL_Main.RenderWater -= IL_Main_RenderWater;
-        IL_Main.RenderBackground -= IL_Main_RenderBackground;
-        IL_Main.DrawCapture -= DrawLavatoCapture;
+        IL_Main.DoDraw -= MainDraw;
+        IL_Main.RenderWater -= RenderWater;
+        IL_Main.RenderBackground -= RenderBackground;
+        IL_Main.DrawCapture -= DrawCapture;
         IL_TileDrawing.Draw -= AddTileLiquidDrawing;
         On_TileDrawing.DrawTile_LiquidBehindTile -= BlockLavaDrawingForSlopes;
     }
@@ -123,11 +123,32 @@ public partial class BiomeLavaMod : Mod
         if (Active && waterfallType == WaterStyleID.Lava)
         {
             // TODO: lavaLiquidAlpha
-            Main.spriteBatch.Draw(Style.LavaFallTexture.Value, position, sourceRect, color, 0f, default, 1f, effects, 0f);
+            Main.spriteBatch.Draw(
+                Style.LavaFallTexture.Value,
+                position,
+                sourceRect,
+                color,
+                0f,
+                default,
+                1f,
+                effects,
+                0f
+            );
+
             return;
         }
 
-        orig.Invoke(self, waterfallType, x, y, opacity, position, sourceRect, color, effects);
+        orig.Invoke(
+            self,
+            waterfallType,
+            x,
+            y,
+            opacity,
+            position,
+            sourceRect,
+            color,
+            effects
+        );
     }
 
     private static void AddLavaFallLight(On_WaterfallManager.orig_AddLight orig, int waterfallType, int x, int y)
@@ -135,9 +156,9 @@ public partial class BiomeLavaMod : Mod
         if (Active && waterfallType == WaterStyleID.Lava)
         {
             var color = Style.LightColor.ToVector3();
-            var r = (color.X + (270 - Main.mouseTextColor) / 900f) * 0.4f;
-            var g = r * color.Y;
-            var b = r * color.Z;
+            float r = (color.X + (270 - Main.mouseTextColor) / 900f) * 0.4f;
+            float g = r * color.Y;
+            float b = r * color.Z;
             Lighting.AddLight(x, y, r, g, b);
             return;
         }
@@ -161,7 +182,8 @@ public partial class BiomeLavaMod : Mod
     {
         var c = new ILCursor(il);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchLdarg(out _),
             static i => i.MatchLdcI4(374),
             static i => i.MatchBneUn(out _),
@@ -180,7 +202,8 @@ public partial class BiomeLavaMod : Mod
     {
         var c = new ILCursor(il);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchLdcI4(16),
             static i => i.MatchLdcI4(16),
             static i => i.MatchLdcI4(35)
@@ -188,7 +211,8 @@ public partial class BiomeLavaMod : Mod
 
         c.EmitDelegate(ModifyLavaBubbleType);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchLdcI4(16),
             static i => i.MatchLdcI4(8),
             static i => i.MatchLdcI4(35)
@@ -201,7 +225,8 @@ public partial class BiomeLavaMod : Mod
     {
         var c = new ILCursor(il);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(172),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -231,7 +256,8 @@ public partial class BiomeLavaMod : Mod
 
         c.EmitDelegate(ModifyLavaBubbleType);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(180),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -266,7 +292,8 @@ public partial class BiomeLavaMod : Mod
     {
         var c = new ILCursor(il);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(10),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -296,7 +323,8 @@ public partial class BiomeLavaMod : Mod
 
         c.EmitDelegate(ModifyLavaBubbleType);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(19),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -331,7 +359,8 @@ public partial class BiomeLavaMod : Mod
     {
         var c = new ILCursor(il);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(22),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -361,7 +390,8 @@ public partial class BiomeLavaMod : Mod
 
         c.EmitDelegate(ModifyLavaBubbleType);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(30),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -396,7 +426,8 @@ public partial class BiomeLavaMod : Mod
     {
         var c = new ILCursor(il);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(15),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -426,7 +457,8 @@ public partial class BiomeLavaMod : Mod
 
         c.EmitDelegate(ModifyLavaBubbleType);
 
-        c.GotoNext(MoveType.After,
+        c.GotoNext(
+            MoveType.After,
             static i => i.MatchStloc(23),
             static i => i.MatchBr(out _),
             static i => i.MatchLdarg0(),
@@ -461,7 +493,6 @@ public partial class BiomeLavaMod : Mod
 
     #region Lighting
 
-
     private static void ModifyLavaLight(On_TileLightScanner.orig_ApplyLiquidLight orig, TileLightScanner self, Tile tile, ref Vector3 lightColor)
     {
         orig.Invoke(self, tile, ref lightColor);
@@ -469,19 +500,23 @@ public partial class BiomeLavaMod : Mod
         if (tile.LiquidType != LiquidID.Lava)
             return;
 
-        var num = Style.LightColor.R / 255f;
-        var num2 = Style.LightColor.G / 255f;
-        var num3 = Style.LightColor.B / 255f;
-        var (r, g, b, _) = Style.LightColor.ToVector3();
-        var colorManipulator = (float)(270 - Main.mouseTextColor) / 900f;
-        num += colorManipulator;
-        num2 += colorManipulator;
-        num3 += colorManipulator;
-        if (lightColor.X < num) lightColor.X = num;
+        float r = Style.LightColor.ToVector3().X;
+        float g = Style.LightColor.ToVector3().Y;
+        float b = Style.LightColor.ToVector3().Z;
+        float colorManipulator = (270 - Main.mouseTextColor) / 900f;
 
-        if (lightColor.Y < num2) lightColor.Y = num2;
+        r += colorManipulator;
+        g += colorManipulator;
+        b += colorManipulator;
 
-        if (lightColor.Z < num3) lightColor.Z = num3;
+        if (lightColor.X < r)
+            lightColor.X = r;
+
+        if (lightColor.Y < g)
+            lightColor.Y = g;
+
+        if (lightColor.Z < b)
+            lightColor.Z = b;
     }
 
     private static void BlockLavaRetroLighting(ILContext il)
@@ -489,63 +524,152 @@ public partial class BiomeLavaMod : Mod
         var c = new ILCursor(il);
 
         ILLabel l = null;
-        c.GotoNext(MoveType.After, static i => i.MatchCgt(), static i => i.MatchLdarg1(), static i => i.MatchOr(), static i => i.MatchBrfalse(out l));
-        if (l == null) return;
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchCgt(),
+            static i => i.MatchLdarg1(),
+            static i => i.MatchOr(),
+            i => i.MatchBrfalse(out l)
+        );
+
+        if (l == null)
+            return;
+
         c.EmitLdloc(12);
         c.EmitLdloc(11);
-        c.EmitDelegate((int i, int j) => { return Main.tile[i, j].LiquidType == LiquidID.Lava; });
+        c.EmitDelegate(static (int i, int j) => Main.tile[i, j].LiquidType == LiquidID.Lava);
         c.EmitBrtrue(l);
     }
 
     #endregion
 
-    private void DrawLavatoCapture(ILContext il)
+    private void DrawCapture(ILContext il)
     {
         var c = new ILCursor(il);
         c.GotoNext(MoveType.After, static i => i.MatchLdsfld<Main>("liquidAlpha"), static i => i.MatchCall(out _), static i => i.MatchStloc2());
-        var alphaSave = lavaLiquidAlpha.ToArray();
+        float[] alphaSave = lavaLiquidAlpha.ToArray();
         c.EmitDelegate(() => { alphaSave = lavaLiquidAlpha.ToArray(); });
-        c.GotoNext(MoveType.Before, static i => i.MatchLdcI4(0), static i => i.MatchStloc(34), static i => i.MatchBr(out _), static i => i.MatchLdloc(34), static i => i.MatchLdcI4(1),
-            static i => i.MatchBeq(out _));
+        c.GotoNext(
+            MoveType.Before,
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchStloc(34),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdloc(34),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchBeq(out _)
+        );
+
         c.EmitLdloc(8);
-        c.EmitDelegate((CaptureBiome biome) =>
-        {
-            // TODO: lavaLiquid alpha either 0f or 1f here
-        });
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchLdsfld<Main>("waterStyle"), static i => i.MatchLdcR4(1), static i => i.MatchLdcI4(1),
-            static i => i.MatchCall<Main>("DrawLiquid"));
+        c.EmitDelegate(
+            (CaptureBiome biome) =>
+            {
+                // TODO: lavaLiquid alpha either 0f or 1f here
+            }
+        );
+
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchLdsfld<Main>("waterStyle"),
+            static i => i.MatchLdcR4(1),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawLiquid")
+        );
+
         c.EmitDelegate(() => { DrawLiquid(true, Style); });
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchLdsfld<Main>("bloodMoon"), static i => i.MatchBrtrue(out _), static i => i.MatchLdloc(8),
-            static i => i.MatchLdfld<CaptureBiome>("WaterStyle"), static i => i.MatchBr(out _), static i => i.MatchLdcI4(9), static i => i.MatchLdcR4(1), static i => i.MatchLdcI4(1),
-            static i => i.MatchCall<Main>("DrawLiquid"));
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchLdsfld<Main>("bloodMoon"),
+            static i => i.MatchBrtrue(out _),
+            static i => i.MatchLdloc(8),
+            static i => i.MatchLdfld<CaptureBiome>("WaterStyle"),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdcI4(9),
+            static i => i.MatchLdcR4(1),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawLiquid")
+        );
+
         c.EmitDelegate(() => { DrawLiquid(true, Style); });
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchLdsfld<Main>("waterStyle"), static i => i.MatchLdcR4(1), static i => i.MatchLdcI4(1),
-            static i => i.MatchCall<Main>("DrawLiquid"));
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchLdsfld<Main>("waterStyle"),
+            static i => i.MatchLdcR4(1),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawLiquid")
+        );
+
         c.EmitDelegate(() => { DrawLiquid(false, Style); });
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchLdloc(8), static i => i.MatchLdfld<CaptureBiome>("WaterStyle"), static i => i.MatchLdcR4(1),
-            static i => i.MatchLdcI4(1), static i => i.MatchCall<Main>("DrawLiquid"));
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchLdloc(8),
+            static i => i.MatchLdfld<CaptureBiome>("WaterStyle"),
+            static i => i.MatchLdcR4(1),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawLiquid")
+        );
+
         c.EmitDelegate(() => { DrawLiquid(false, Style); });
         c.GotoNext(MoveType.After, static i => i.MatchLdloc2(), static i => i.MatchStsfld<Main>("liquidAlpha"));
         c.EmitDelegate(() => { lavaLiquidAlpha = alphaSave; });
     }
 
-    private void BlockLavaDrawingForSlopes(On_TileDrawing.orig_DrawTile_LiquidBehindTile orig, TileDrawing self, bool solidLayer, bool inFrontOfPlayers,
-        int waterStyleOverride, Vector2 screenPosition, Vector2 screenOffset, int tileX, int tileY, Tile tileCache)
+    private void BlockLavaDrawingForSlopes(
+        On_TileDrawing.orig_DrawTile_LiquidBehindTile orig,
+        TileDrawing self,
+        bool solidLayer,
+        bool inFrontOfPlayers,
+        int waterStyleOverride,
+        Vector2 screenPosition,
+        Vector2 screenOffset,
+        int tileX,
+        int tileY,
+        Tile tileCache)
     {
         var tile = Main.tile[tileX + 1, tileY];
         var tile2 = Main.tile[tileX - 1, tileY];
         var tile3 = Main.tile[tileX, tileY - 1];
         var tile4 = Main.tile[tileX, tileY + 1];
-        if (tileCache.LiquidType == LiquidID.Lava || tile.LiquidType == LiquidID.Lava || tile2.LiquidType == LiquidID.Lava || tile3.LiquidType == LiquidID.Lava || tile4.LiquidType == LiquidID.Lava) return;
+        if (tileCache.LiquidType == LiquidID.Lava || tile.LiquidType == LiquidID.Lava || tile2.LiquidType == LiquidID.Lava || tile3.LiquidType == LiquidID.Lava || tile4.LiquidType == LiquidID.Lava)
+            return;
 
-        orig.Invoke(self, solidLayer, inFrontOfPlayers, waterStyleOverride, screenPosition, screenOffset, tileX, tileY, tileCache);
+        orig.Invoke(
+            self,
+            solidLayer,
+            inFrontOfPlayers,
+            waterStyleOverride,
+            screenPosition,
+            screenOffset,
+            tileX,
+            tileY,
+            tileCache
+        );
     }
 
     private void AddTileLiquidDrawing(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdarg1(), static i => i.MatchLdcI4(0), static i => i.MatchLdarg(out var waterStyleOverride), static i => i.MatchLdloc1(),
-            static i => i.MatchLdloc2(), static i => i.MatchLdloc(12), static i => i.MatchLdloc(13), static i => i.MatchLdloc(14), static i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile"));
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdarg1(),
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchLdarg(out int waterStyleOverride),
+            static i => i.MatchLdloc1(),
+            static i => i.MatchLdloc2(),
+            static i => i.MatchLdloc(12),
+            static i => i.MatchLdloc(13),
+            static i => i.MatchLdloc(14),
+            static i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile")
+        );
+
         c.EmitLdloc1();
         c.EmitLdloc2();
         c.EmitLdloc(12);
@@ -554,6 +678,46 @@ public partial class BiomeLavaMod : Mod
         c.EmitDelegate((Vector2 unscaledPosition, Vector2 vector, int j, int i, Tile tile) => { DrawTile_LiquidBehindTile(false, false, Style, unscaledPosition, vector, j, i, tile); });
     }
 
+    private void MainDraw(ILContext il)
+    {
+        var c = new ILCursor(il);
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdsfld<Main>("drawToScreen"),
+            static i => i.MatchBrfalse(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawWaters")
+        );
+
+        c.EmitDelegate(() => { DrawLavas(true); });
+        c.GotoNext(
+            MoveType.After,
+            static i => i.MatchLdsfld<Main>("drawToScreen"),
+            static i => i.MatchBrfalse(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdcI4(0),
+            static i => i.MatchCall<Main>("DrawWaters")
+        );
+
+        c.EmitDelegate(() => { DrawLavas(); });
+    }
+
+    private void RenderWater(ILContext il)
+    {
+        var c = new ILCursor(il);
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchCall<Main>("DrawWaters"));
+        c.EmitDelegate(() => { DrawLavas(); });
+    }
+
+    private void RenderBackground(ILContext il)
+    {
+        var c = new ILCursor(il);
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchCall<Main>("DrawWaters"));
+        c.EmitDelegate(() => { DrawLavas(true); });
+    }
+
+#if FALSE // Old code
     private void BlockLavaDrawing(ILContext il)
     {
         var c = new ILCursor(il);
@@ -566,31 +730,7 @@ public partial class BiomeLavaMod : Mod
         c.GotoNext(MoveType.Before, static i => i.MatchLdloc(4), static i => i.MatchLdcI4(1), static i => i.MatchAdd(), static i => i.MatchStloc(4));
         l.Target = c.Next;
     }
-
-    private void IL_Main_DoDraw(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, static i => i.MatchLdsfld<Main>("drawToScreen"), static i => i.MatchBrfalse(out _), static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1),
-            static i => i.MatchCall<Main>("DrawWaters"));
-        c.EmitDelegate(() => { DrawLavas(true); });
-        c.GotoNext(MoveType.After, static i => i.MatchLdsfld<Main>("drawToScreen"), static i => i.MatchBrfalse(out _), static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0),
-            static i => i.MatchCall<Main>("DrawWaters"));
-        c.EmitDelegate(() => { DrawLavas(); });
-    }
-
-    private void IL_Main_RenderWater(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchCall<Main>("DrawWaters"));
-        c.EmitDelegate(() => { DrawLavas(); });
-    }
-
-    private void IL_Main_RenderBackground(ILContext il)
-    {
-        var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchCall<Main>("DrawWaters"));
-        c.EmitDelegate(() => { DrawLavas(true); });
-    }
+#endif
 
     #endregion
 
@@ -614,11 +754,11 @@ public partial class BiomeLavaMod : Mod
 
         if (!Main.drawToScreen && !isBackground)
         {
-            var vector = (Vector2)(Main.drawToScreen ? Vector2.Zero : new Vector2((float)Main.offScreenRange, (float)Main.offScreenRange));
-            var val = (int)((Main.Camera.ScaledPosition.X - vector.X) / 16f - 1f);
-            var val2 = (int)((Main.Camera.ScaledPosition.X + Main.Camera.ScaledSize.X + vector.X) / 16f) + 2;
-            var val3 = (int)((Main.Camera.ScaledPosition.Y - vector.Y) / 16f - 1f);
-            var val4 = (int)((Main.Camera.ScaledPosition.Y + Main.Camera.ScaledSize.Y + vector.Y) / 16f) + 5;
+            var vector = (Vector2)(Main.drawToScreen ? Vector2.Zero : new((float)Main.offScreenRange, (float)Main.offScreenRange));
+            int val = (int)((Main.Camera.ScaledPosition.X - vector.X) / 16f - 1f);
+            int val2 = (int)((Main.Camera.ScaledPosition.X + Main.Camera.ScaledSize.X + vector.X) / 16f) + 2;
+            int val3 = (int)((Main.Camera.ScaledPosition.Y - vector.Y) / 16f - 1f);
+            int val4 = (int)((Main.Camera.ScaledPosition.Y + Main.Camera.ScaledSize.Y + vector.Y) / 16f) + 5;
             val = Math.Max(val, 5) - 2;
             val3 = Math.Max(val3, 5);
             val2 = Math.Min(val2, Main.maxTilesX - 5) + 2;
@@ -640,11 +780,13 @@ public partial class BiomeLavaMod : Mod
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        var drawOffset = (Vector2)(Main.drawToScreen ? Vector2.Zero : new Vector2((float)Main.offScreenRange, (float)Main.offScreenRange)) - Main.screenPosition;
-        if (bg) DrawLiquidBehindTiles();
+        var drawOffset = (Vector2)(Main.drawToScreen ? Vector2.Zero : new((float)Main.offScreenRange, (float)Main.offScreenRange)) - Main.screenPosition;
+        if (bg)
+            DrawLiquidBehindTiles();
 
         DrawLava(Main.spriteBatch, drawOffset, Alpha, bg);
-        if (!bg) TimeLogger.DrawTime(4, stopwatch.Elapsed.TotalMilliseconds);
+        if (!bg)
+            TimeLogger.DrawTime(4, stopwatch.Elapsed.TotalMilliseconds);
     }
 
     public unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, float globalAlpha, bool isBackgroundDraw)
@@ -656,9 +798,9 @@ public partial class BiomeLavaMod : Mod
         fixed (LiquidDrawCache* ptr3 = &LiquidRenderer.Instance._drawCache[0])
         {
             var ptr2 = ptr3;
-            for (var i = drawArea.X; i < drawArea.X + drawArea.Width; i++)
+            for (int i = drawArea.X; i < drawArea.X + drawArea.Width; i++)
             {
-                for (var j = drawArea.Y; j < drawArea.Y + drawArea.Height; j++)
+                for (int j = drawArea.Y; j < drawArea.Y + drawArea.Height; j++)
                 {
                     if (ptr2->IsVisible && ptr2->Type == 1)
                     {
@@ -669,7 +811,7 @@ public partial class BiomeLavaMod : Mod
                             sourceRectangle.Y += LiquidRenderer.Instance._animationFrame * 80;
 
                         var liquidOffset = ptr2->LiquidOffset;
-                        var num = globalAlpha;
+                        float num = globalAlpha;
                         Lighting.GetCornerColors(i, j, out var vertices);
                         ref var bottomLeftColor = ref vertices.BottomLeftColor;
                         bottomLeftColor *= num;
@@ -680,8 +822,15 @@ public partial class BiomeLavaMod : Mod
                         ref var topRightColor = ref vertices.TopRightColor;
                         topRightColor *= num;
                         Main.DrawTileInWater(drawOffset, i, j);
-                        Main.tileBatch.Draw(Style.LavaTexture.Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle,
-                            vertices, Vector2.Zero, 1f, (SpriteEffects)0);
+                        Main.tileBatch.Draw(
+                            Style.LavaTexture.Value,
+                            new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset,
+                            sourceRectangle,
+                            vertices,
+                            Vector2.Zero,
+                            1f,
+                            (SpriteEffects)0
+                        );
                     }
 
                     ptr2++;
@@ -694,36 +843,41 @@ public partial class BiomeLavaMod : Mod
 
     public void oldDrawWater(bool bg = false, float Alpha = 1f)
     {
-        var num = 0f;
-        var num12 = 99999f;
-        var num23 = 99999f;
-        var num27 = -1;
-        var num28 = -1;
+        float num = 0f;
+        float num12 = 99999f;
+        float num23 = 99999f;
+        int num27 = -1;
+        int num28 = -1;
         Vector2 vector = new((float)Main.offScreenRange, (float)Main.offScreenRange);
-        if (Main.drawToScreen) vector = Vector2.Zero;
+        if (Main.drawToScreen)
+            vector = Vector2.Zero;
 
         _ = new Color[4];
-        var num29 = (int)(255f * (1f - Main.gfxQuality) + 40f * Main.gfxQuality);
+        int num29 = (int)(255f * (1f - Main.gfxQuality) + 40f * Main.gfxQuality);
         _ = Main.gfxQuality;
         _ = Main.gfxQuality;
-        var num30 = (int)((Main.screenPosition.X - vector.X) / 16f - 1f);
-        var num31 = (int)((Main.screenPosition.X + (float)Main.screenWidth + vector.X) / 16f) + 2;
-        var num32 = (int)((Main.screenPosition.Y - vector.Y) / 16f - 1f);
-        var num2 = (int)((Main.screenPosition.Y + (float)Main.screenHeight + vector.Y) / 16f) + 5;
-        if (num30 < 5) num30 = 5;
+        int num30 = (int)((Main.screenPosition.X - vector.X) / 16f - 1f);
+        int num31 = (int)((Main.screenPosition.X + (float)Main.screenWidth + vector.X) / 16f) + 2;
+        int num32 = (int)((Main.screenPosition.Y - vector.Y) / 16f - 1f);
+        int num2 = (int)((Main.screenPosition.Y + (float)Main.screenHeight + vector.Y) / 16f) + 5;
+        if (num30 < 5)
+            num30 = 5;
 
-        if (num31 > Main.maxTilesX - 5) num31 = Main.maxTilesX - 5;
+        if (num31 > Main.maxTilesX - 5)
+            num31 = Main.maxTilesX - 5;
 
-        if (num32 < 5) num32 = 5;
+        if (num32 < 5)
+            num32 = 5;
 
-        if (num2 > Main.maxTilesY - 5) num2 = Main.maxTilesY - 5;
+        if (num2 > Main.maxTilesY - 5)
+            num2 = Main.maxTilesY - 5;
 
         Vector2 vector2;
         Rectangle value;
         Color newColor;
-        for (var i = num32; i < num2 + 4; i++)
+        for (int i = num32; i < num2 + 4; i++)
         {
-            for (var j = num30 - 2; j < num31 + 2; j++)
+            for (int j = num30 - 2; j < num31 + 2; j++)
             {
                 if (Main.tile[j, i].LiquidAmount <= 0 ||
                     (Main.tile[j, i].HasUnactuatedTile && Main.tileSolid[Main.tile[j, i].TileType] && !Main.tileSolidTop[Main.tile[j, i].TileType]) ||
@@ -733,18 +887,20 @@ public partial class BiomeLavaMod : Mod
                 var color = Lighting.GetColor(j, i);
                 float num3 = 256 - Main.tile[j, i].LiquidAmount;
                 num3 /= 32f;
-                var num4 = 0;
+                int num4 = 0;
                 if (Main.tile[j, i].LiquidType == LiquidID.Lava)
                 {
-                    if (Main.drewLava) continue;
+                    if (Main.drewLava)
+                        continue;
 
-                    var num5 = Math.Abs((float)(j * 16 + 8) - (Main.screenPosition.X + (float)(Main.screenWidth / 2)));
-                    var num6 = Math.Abs((float)(i * 16 + 8) - (Main.screenPosition.Y + (float)(Main.screenHeight / 2)));
+                    float num5 = Math.Abs((float)(j * 16 + 8) - (Main.screenPosition.X + (float)(Main.screenWidth / 2)));
+                    float num6 = Math.Abs((float)(i * 16 + 8) - (Main.screenPosition.Y + (float)(Main.screenHeight / 2)));
                     if (num5 < (float)(Main.screenWidth * 2) && num6 < (float)(Main.screenHeight * 2))
                     {
-                        var num7 = (float)Math.Sqrt(num5 * num5 + num6 * num6);
-                        var num8 = 1f - num7 / ((float)Main.screenWidth * 0.75f);
-                        if (num8 > 0f) num += num8;
+                        float num7 = (float)Math.Sqrt(num5 * num5 + num6 * num6);
+                        float num8 = 1f - num7 / ((float)Main.screenWidth * 0.75f);
+                        if (num8 > 0f)
+                            num += num8;
                     }
 
                     if (num5 < num12)
@@ -760,73 +916,79 @@ public partial class BiomeLavaMod : Mod
                     }
                 }
 
-                if (Main.drewLava) continue;
+                if (Main.drewLava)
+                    continue;
 
-                var num9 = 0.5f;
-                if (bg) num9 = 1f;
+                float num9 = 0.5f;
+                if (bg)
+                    num9 = 1f;
 
-                if (num4 != 1 && num4 != 11) num9 *= Alpha;
+                if (num4 != 1 && num4 != 11)
+                    num9 *= Alpha;
 
                 Main.DrawTileInWater(-Main.screenPosition + vector, j, i);
-                vector2 = new Vector2((float)(j * 16), (float)(i * 16 + (int)num3 * 2));
-                value = new Rectangle(0, 0, 16, 16 - (int)num3 * 2);
-                var flag2 = true;
+                vector2 = new((float)(j * 16), (float)(i * 16 + (int)num3 * 2));
+                value = new(0, 0, 16, 16 - (int)num3 * 2);
+                bool flag2 = true;
                 if (Main.tile[j, i + 1].LiquidAmount < 245 && (!Main.tile[j, i + 1].HasUnactuatedTile || !Main.tileSolid[Main.tile[j, i + 1].TileType] ||
                                                                Main.tileSolidTop[Main.tile[j, i + 1].TileType]))
                 {
                     float num10 = 256 - Main.tile[j, i + 1].LiquidAmount;
                     num10 /= 32f;
                     num9 = 0.5f * (8f - num3) / 4f;
-                    if ((double)num9 > 0.55) num9 = 0.55f;
+                    if ((double)num9 > 0.55)
+                        num9 = 0.55f;
 
-                    if ((double)num9 < 0.35) num9 = 0.35f;
+                    if ((double)num9 < 0.35)
+                        num9 = 0.35f;
 
-                    var num11 = num3 / 2f;
+                    float num11 = num3 / 2f;
                     if (Main.tile[j, i + 1].LiquidAmount < 200)
                     {
-                        if (bg) continue;
+                        if (bg)
+                            continue;
 
                         if (Main.tile[j, i - 1].LiquidAmount > 0 && Main.tile[j, i - 1].LiquidAmount > 0)
                         {
-                            value = new Rectangle(0, 4, 16, 16);
+                            value = new(0, 4, 16, 16);
                             num9 = 0.5f;
                         }
                         else if (Main.tile[j, i - 1].LiquidAmount > 0)
                         {
-                            vector2 = new Vector2((float)(j * 16), (float)(i * 16 + 4));
-                            value = new Rectangle(0, 4, 16, 12);
+                            vector2 = new((float)(j * 16), (float)(i * 16 + 4));
+                            value = new(0, 4, 16, 12);
                             num9 = 0.5f;
                         }
                         else if (Main.tile[j, i + 1].LiquidAmount > 0)
                         {
-                            vector2 = new Vector2((float)(j * 16), (float)(i * 16 + (int)num3 * 2 + (int)num10 * 2));
-                            value = new Rectangle(0, 4, 16, 16 - (int)num3 * 2);
+                            vector2 = new((float)(j * 16), (float)(i * 16 + (int)num3 * 2 + (int)num10 * 2));
+                            value = new(0, 4, 16, 16 - (int)num3 * 2);
                         }
                         else
                         {
-                            vector2 = new Vector2((float)(j * 16 + (int)num11), (float)(i * 16 + (int)num11 * 2 + (int)num10 * 2));
-                            value = new Rectangle(0, 4, 16 - (int)num11 * 2, 16 - (int)num11 * 2);
+                            vector2 = new((float)(j * 16 + (int)num11), (float)(i * 16 + (int)num11 * 2 + (int)num10 * 2));
+                            value = new(0, 4, 16 - (int)num11 * 2, 16 - (int)num11 * 2);
                         }
                     }
                     else
                     {
                         num9 = 0.5f;
-                        value = new Rectangle(0, 4, 16, 16 - (int)num3 * 2 + (int)num10 * 2);
+                        value = new(0, 4, 16, 16 - (int)num3 * 2 + (int)num10 * 2);
                     }
                 }
                 else if (Main.tile[j, i - 1].LiquidAmount > 32)
                 {
-                    value = new Rectangle(0, 4, value.Width, value.Height);
+                    value = new(0, 4, value.Width, value.Height);
                 }
                 else if (num3 < 1f && Main.tile[j, i - 1].HasUnactuatedTile && Main.tileSolid[Main.tile[j, i - 1].TileType] &&
                          !Main.tileSolidTop[Main.tile[j, i - 1].TileType])
                 {
-                    vector2 = new Vector2((float)(j * 16), (float)(i * 16));
-                    value = new Rectangle(0, 4, 16, 16);
+                    vector2 = new((float)(j * 16), (float)(i * 16));
+                    value = new(0, 4, 16, 16);
                 }
                 else
                 {
-                    for (var k = i + 1;
+                    for (int k = i + 1;
                          k < i + 6 && (!Main.tile[j, k].HasUnactuatedTile || !Main.tileSolid[Main.tile[j, k].TileType] || Main.tileSolidTop[Main.tile[j, k].TileType]);
                          k++)
                     {
@@ -840,26 +1002,39 @@ public partial class BiomeLavaMod : Mod
                     if (!flag2)
                     {
                         num9 = 0.5f;
-                        value = new Rectangle(0, 4, 16, 16);
+                        value = new(0, 4, 16, 16);
                     }
                     else if (Main.tile[j, i - 1].LiquidAmount > 0)
                     {
-                        value = new Rectangle(0, 2, value.Width, value.Height);
+                        value = new(0, 2, value.Width, value.Height);
                     }
                 }
 
                 if ((color.R > 20 || color.B > 20 || color.G > 20) && value.Y < 4)
                 {
                     int num13 = color.R;
-                    if (color.G > num13) num13 = color.G;
+                    if (color.G > num13)
+                        num13 = color.G;
 
-                    if (color.B > num13) num13 = color.B;
+                    if (color.B > num13)
+                        num13 = color.B;
 
                     num13 /= 30;
                     if (Main.rand.Next(20000) < num13)
                     {
-                        newColor = new Color(255, 255, 255);
-                        var num14 = Dust.NewDust(new Vector2((float)(j * 16), vector2.Y - 2f), 16, 8, 43, 0f, 0f, 254, newColor, 0.75f);
+                        newColor = new(255, 255, 255);
+                        int num14 = Dust.NewDust(
+                            new((float)(j * 16), vector2.Y - 2f),
+                            16,
+                            8,
+                            43,
+                            0f,
+                            0f,
+                            254,
+                            newColor,
+                            0.75f
+                        );
+
                         var obj = Main.dust[num14];
                         obj.velocity *= 0f;
                     }
@@ -868,56 +1043,71 @@ public partial class BiomeLavaMod : Mod
                 if (Main.tile[j, i].LiquidType == LiquidID.Lava)
                 {
                     num9 *= 1.8f;
-                    if (num9 > 1f) num9 = 1f;
+                    if (num9 > 1f)
+                        num9 = 1f;
 
                     if (Main.instance.IsActive && !Main.gamePaused && Dust.lavaBubbles < 200)
                     {
-                        if (Main.tile[j, i].LiquidAmount > 200 && Main.rand.Next(700) == 0) Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16)), 16, 16, 35);
+                        if (Main.tile[j, i].LiquidAmount > 200 && Main.rand.Next(700) == 0)
+                            Dust.NewDust(new((float)(j * 16), (float)(i * 16)), 16, 16, 35);
 
                         if (value.Y == 0 && Main.rand.Next(350) == 0)
                         {
-                            var num15 = Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f), 16, 8, Style.SplashDustID, 0f, 0f, 50,
-                                default, 1.5f);
+                            int num15 = Dust.NewDust(
+                                new((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f),
+                                16,
+                                8,
+                                Style.SplashDustID,
+                                0f,
+                                0f,
+                                50,
+                                default,
+                                1.5f
+                            );
+
                             var obj2 = Main.dust[num15];
                             obj2.velocity *= 0.8f;
                             Main.dust[num15].velocity.X *= 2f;
                             Main.dust[num15].velocity.Y -= (float)Main.rand.Next(1, 7) * 0.1f;
-                            if (Main.rand.Next(10) == 0) Main.dust[num15].velocity.Y *= Main.rand.Next(2, 5);
+                            if (Main.rand.Next(10) == 0)
+                                Main.dust[num15].velocity.Y *= Main.rand.Next(2, 5);
 
                             Main.dust[num15].noGravity = true;
                         }
                     }
                 }
 
-                var num16 = (float)(int)color.R * num9;
-                var num17 = (float)(int)color.G * num9;
-                var num18 = (float)(int)color.B * num9;
-                var num19 = (float)(int)color.A * num9;
-                color = new Color((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
+                float num16 = (float)(int)color.R * num9;
+                float num17 = (float)(int)color.G * num9;
+                float num18 = (float)(int)color.B * num9;
+                float num19 = (float)(int)color.A * num9;
+                color = new((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
                 if (Lighting.NotRetro && !bg)
                 {
                     var color2 = color;
                     if (num4 != 1 && ((double)(int)color2.R > (double)num29 * 0.6 || (double)(int)color2.G > (double)num29 * 0.65 ||
                                       (double)(int)color2.B > (double)num29 * 0.7))
-                        for (var l = 0; l < 4; l++)
+                        for (int l = 0; l < 4; l++)
                         {
-                            var num20 = 0;
-                            var num21 = 0;
-                            var width = 8;
-                            var height = 8;
+                            int num20 = 0;
+                            int num21 = 0;
+                            int width = 8;
+                            int height = 8;
                             var color3 = color2;
                             var color4 = Lighting.GetColor(j, i);
                             if (l == 0)
                             {
                                 color4 = Lighting.GetColor(j - 1, i - 1);
-                                if (value.Height < 8) height = value.Height;
+                                if (value.Height < 8)
+                                    height = value.Height;
                             }
 
                             if (l == 1)
                             {
                                 color4 = Lighting.GetColor(j + 1, i - 1);
                                 num20 = 8;
-                                if (value.Height < 8) height = value.Height;
+                                if (value.Height < 8)
+                                    height = value.Height;
                             }
 
                             if (l == 2)
@@ -939,51 +1129,100 @@ public partial class BiomeLavaMod : Mod
                             num17 = (float)(int)color4.G * num9;
                             num18 = (float)(int)color4.B * num9;
                             num19 = (float)(int)color4.A * num9;
-                            color4 = new Color((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
+                            color4 = new((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
                             color3.R = (byte)(color2.R * 3 + color4.R * 2 / 5);
                             color3.G = (byte)(color2.G * 3 + color4.G * 2 / 5);
                             color3.B = (byte)(color2.B * 3 + color4.B * 2 / 5);
                             color3.A = (byte)(color2.A * 3 + color4.A * 2 / 5);
-                            Main.spriteBatch.Draw(Style.LavaBlockTexture.Value, vector2 - Main.screenPosition + new Vector2((float)num20, (float)num21) + vector,
-                                (Rectangle?)new Rectangle(value.X + num20, value.Y + num21, width, height), color3, 0f, default, 1f, (SpriteEffects)0, 0f);
+                            Main.spriteBatch.Draw(
+                                Style.LavaBlockTexture.Value,
+                                vector2 - Main.screenPosition + new Vector2((float)num20, (float)num21) + vector,
+                                (Rectangle?)new Rectangle(value.X + num20, value.Y + num21, width, height),
+                                color3,
+                                0f,
+                                default,
+                                1f,
+                                (SpriteEffects)0,
+                                0f
+                            );
                         }
                     else
-                        Main.spriteBatch.Draw(Style.LavaBlockTexture.Value, vector2 - Main.screenPosition + vector, (Rectangle?)value, color, 0f, default, 1f,
-                            (SpriteEffects)0, 0f);
+                        Main.spriteBatch.Draw(
+                            Style.LavaBlockTexture.Value,
+                            vector2 - Main.screenPosition + vector,
+                            (Rectangle?)value,
+                            color,
+                            0f,
+                            default,
+                            1f,
+                            (SpriteEffects)0,
+                            0f
+                        );
                 }
                 else
                 {
-                    if (value.Y < 4) value.X += (int)(Main.wFrame * 18f);
+                    if (value.Y < 4)
+                        value.X += (int)(Main.wFrame * 18f);
 
-                    Main.spriteBatch.Draw(Style.LavaBlockTexture.Value, vector2 - Main.screenPosition + vector, (Rectangle?)value, color, 0f, default, 1f,
-                        (SpriteEffects)0, 0f);
+                    Main.spriteBatch.Draw(
+                        Style.LavaBlockTexture.Value,
+                        vector2 - Main.screenPosition + vector,
+                        (Rectangle?)value,
+                        color,
+                        0f,
+                        default,
+                        1f,
+                        (SpriteEffects)0,
+                        0f
+                    );
                 }
 
-                if (!Main.tile[j, i + 1].IsHalfBlock) continue;
+                if (!Main.tile[j, i + 1].IsHalfBlock)
+                    continue;
 
                 color = Lighting.GetColor(j, i + 1);
                 num16 = (float)(int)color.R * num9;
                 num17 = (float)(int)color.G * num9;
                 num18 = (float)(int)color.B * num9;
                 num19 = (float)(int)color.A * num9;
-                color = new Color((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
-                vector2 = new Vector2((float)(j * 16), (float)(i * 16 + 16));
-                Main.spriteBatch.Draw(Style.LavaBlockTexture.Value, vector2 - Main.screenPosition + vector, (Rectangle?)new Rectangle(0, 4, 16, 8), color, 0f,
-                    default, 1f, (SpriteEffects)0, 0f);
-                var num22 = 6f;
-                var num24 = 0.75f;
+                color = new((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
+                vector2 = new((float)(j * 16), (float)(i * 16 + 16));
+                Main.spriteBatch.Draw(
+                    Style.LavaBlockTexture.Value,
+                    vector2 - Main.screenPosition + vector,
+                    (Rectangle?)new Rectangle(0, 4, 16, 8),
+                    color,
+                    0f,
+                    default,
+                    1f,
+                    (SpriteEffects)0,
+                    0f
+                );
+
+                float num22 = 6f;
+                float num24 = 0.75f;
                 num22 = 4f;
                 num24 = 0.5f;
-                for (var m = 0; (float)m < num22; m++)
+                for (int m = 0; (float)m < num22; m++)
                 {
-                    var num25 = i + 2 + m;
-                    if (WorldGen.SolidTile(j, num25)) break;
+                    int num25 = i + 2 + m;
+                    if (WorldGen.SolidTile(j, num25))
+                        break;
 
-                    var num26 = 1f - (float)m / num22;
+                    float num26 = 1f - (float)m / num22;
                     num26 *= num24;
-                    vector2 = new Vector2((float)(j * 16), (float)(num25 * 16 - 2));
-                    Main.spriteBatch.Draw(Style.LavaBlockTexture.Value, vector2 - Main.screenPosition + vector, (Rectangle?)new Rectangle(0, 18, 16, 16), color * num26,
-                        0f, default, 1f, (SpriteEffects)0, 0f);
+                    vector2 = new((float)(j * 16), (float)(num25 * 16 - 2));
+                    Main.spriteBatch.Draw(
+                        Style.LavaBlockTexture.Value,
+                        vector2 - Main.screenPosition + vector,
+                        (Rectangle?)new Rectangle(0, 18, 16, 16),
+                        color * num26,
+                        0f,
+                        default,
+                        1f,
+                        (SpriteEffects)0,
+                        0f
+                    );
                 }
             }
         }
@@ -1002,16 +1241,25 @@ public partial class BiomeLavaMod : Mod
     {
         var unscaledPosition = Main.Camera.UnscaledPosition;
         Vector2 vector = new((float)Main.offScreenRange, (float)Main.offScreenRange);
-        if (Main.drawToScreen) vector = Vector2.Zero;
+        if (Main.drawToScreen)
+            vector = Vector2.Zero;
 
-        GetScreenDrawArea(unscaledPosition, vector + (Main.Camera.UnscaledPosition - Main.Camera.ScaledPosition), out var firstTileX, out var lastTileX,
-            out var firstTileY, out var lastTileY);
-        for (var i = firstTileY; i < lastTileY + 4; i++)
+        GetScreenDrawArea(
+            unscaledPosition,
+            vector + (Main.Camera.UnscaledPosition - Main.Camera.ScaledPosition),
+            out int firstTileX,
+            out int lastTileX,
+            out int firstTileY,
+            out int lastTileY
+        );
+
+        for (int i = firstTileY; i < lastTileY + 4; i++)
         {
-            for (var j = firstTileX - 2; j < lastTileX + 2; j++)
+            for (int j = firstTileX - 2; j < lastTileX + 2; j++)
             {
                 var tile = Main.tile[j, i];
-                if (tile != null) DrawTile_LiquidBehindTile(false, false, style, unscaledPosition, vector, j, i, tile);
+                if (tile != null)
+                    DrawTile_LiquidBehindTile(false, false, style, unscaledPosition, vector, j, i, tile);
             }
         }
     }
@@ -1022,13 +1270,17 @@ public partial class BiomeLavaMod : Mod
         lastTileX = (int)((screenPosition.X + (float)Main.screenWidth + offSet.X) / 16f) + 2;
         firstTileY = (int)((screenPosition.Y - offSet.Y) / 16f - 1f);
         lastTileY = (int)((screenPosition.Y + (float)Main.screenHeight + offSet.Y) / 16f) + 5;
-        if (firstTileX < 4) firstTileX = 4;
+        if (firstTileX < 4)
+            firstTileX = 4;
 
-        if (lastTileX > Main.maxTilesX - 4) lastTileX = Main.maxTilesX - 4;
+        if (lastTileX > Main.maxTilesX - 4)
+            lastTileX = Main.maxTilesX - 4;
 
-        if (firstTileY < 4) firstTileY = 4;
+        if (firstTileY < 4)
+            firstTileY = 4;
 
-        if (lastTileY > Main.maxTilesY - 4) lastTileY = Main.maxTilesY - 4;
+        if (lastTileY > Main.maxTilesY - 4)
+            lastTileY = Main.maxTilesY - 4;
 
         if (Main.sectionManager.AnyUnfinishedSections)
         {
@@ -1037,11 +1289,19 @@ public partial class BiomeLavaMod : Mod
             TimeLogger.DetailedDrawTime(5);
         }
 
-        if (Main.sectionManager.AnyNeedRefresh) WorldGen.RefreshSections(firstTileX, firstTileY, lastTileX, lastTileY);
+        if (Main.sectionManager.AnyNeedRefresh)
+            WorldGen.RefreshSections(firstTileX, firstTileY, lastTileX, lastTileY);
     }
 
-    private void DrawTile_LiquidBehindTile(bool solidLayer, bool inFrontOfPlayers, ModLavaStyle style, Vector2 screenPosition, Vector2 screenOffset, int tileX,
-        int tileY, Tile tileCache)
+    private void DrawTile_LiquidBehindTile(
+        bool solidLayer,
+        bool inFrontOfPlayers,
+        ModLavaStyle style,
+        Vector2 screenPosition,
+        Vector2 screenOffset,
+        int tileX,
+        int tileY,
+        Tile tileCache)
     {
         var tile = Main.tile[tileX + 1, tileY];
         var tile2 = Main.tile[tileX - 1, tileY];
@@ -1057,16 +1317,16 @@ public partial class BiomeLavaMod : Mod
             (TileID.Sets.BlocksWaterDrawingBehindSelf[tileCache.TileType] && tileCache.Slope == 0))
             return;
 
-        var num = 0;
-        var flag = false;
-        var flag2 = false;
-        var flag3 = false;
-        var flag4 = false;
-        var flag5 = false;
-        var num2 = 0;
-        var flag6 = true;
-        var num3 = (int)tileCache.Slope;
-        var num4 = (int)tileCache.BlockType;
+        int num = 0;
+        bool flag = false;
+        bool flag2 = false;
+        bool flag3 = false;
+        bool flag4 = false;
+        bool flag5 = false;
+        int num2 = 0;
+        bool flag6 = true;
+        int num3 = (int)tileCache.Slope;
+        int num4 = (int)tileCache.BlockType;
         if (tileCache.TileType == 546 && tileCache.LiquidAmount > 0)
         {
             flag5 = true;
@@ -1080,29 +1340,34 @@ public partial class BiomeLavaMod : Mod
             if (tileCache.LiquidAmount > 0 && num4 != 0 && (num4 != 1 || tileCache.LiquidAmount > 160))
             {
                 flag5 = true;
-                if (tileCache.LiquidAmount > num) num = tileCache.LiquidAmount;
+                if (tileCache.LiquidAmount > num)
+                    num = tileCache.LiquidAmount;
             }
 
             if (tile2.LiquidAmount > 0 && num3 != 1 && num3 != 3)
             {
                 flag = true;
-                if (tile2.LiquidAmount > num) num = tile2.LiquidAmount;
+                if (tile2.LiquidAmount > num)
+                    num = tile2.LiquidAmount;
             }
 
             if (tile.LiquidAmount > 0 && num3 != 2 && num3 != 4)
             {
                 flag2 = true;
-                if (tile.LiquidAmount > num) num = tile.LiquidAmount;
+                if (tile.LiquidAmount > num)
+                    num = tile.LiquidAmount;
             }
 
-            if (tile3.LiquidAmount > 0 && num3 != 3 && num3 != 4) flag3 = true;
+            if (tile3.LiquidAmount > 0 && num3 != 3 && num3 != 4)
+                flag3 = true;
 
             if (tile4.LiquidAmount > 0 && num3 != 1 && num3 != 2)
                 if (tile4.LiquidAmount > 240)
                     flag4 = true;
         }
 
-        if (!flag3 && !flag4 && !flag && !flag2 && !flag5) return;
+        if (!flag3 && !flag4 && !flag && !flag2 && !flag5)
+            return;
 
         Lighting.GetCornerColors(tileX, tileY, out var vertices);
         Vector2 vector = new((float)(tileX * 16), (float)(tileY * 16));
@@ -1113,65 +1378,72 @@ public partial class BiomeLavaMod : Mod
             flag2 = true;
         }
 
-        if (tileCache.HasTile && (Main.tileSolidTop[tileCache.TileType] || !Main.tileSolid[tileCache.TileType])) return;
+        if (tileCache.HasTile && (Main.tileSolidTop[tileCache.TileType] || !Main.tileSolid[tileCache.TileType]))
+            return;
 
         if ((!flag3 || !(flag || flag2)) && !(flag4 && flag3))
         {
             if (flag3)
             {
-                liquidSize = new Rectangle(0, 4, 16, 4);
-                if (tileCache.IsHalfBlock || tileCache.Slope != 0) liquidSize = new Rectangle(0, 4, 16, 12);
+                liquidSize = new(0, 4, 16, 4);
+                if (tileCache.IsHalfBlock || tileCache.Slope != 0)
+                    liquidSize = new(0, 4, 16, 12);
             }
             else if (flag4 && !flag && !flag2)
             {
-                vector = new Vector2((float)(tileX * 16), (float)(tileY * 16 + 12));
-                liquidSize = new Rectangle(0, 4, 16, 4);
+                vector = new((float)(tileX * 16), (float)(tileY * 16 + 12));
+                liquidSize = new(0, 4, 16, 4);
             }
             else
             {
-                var num8 = (float)(256 - num) / 32f;
-                var y = 4;
-                if (tile3.LiquidAmount == 0 && (num4 != 0 || !WorldGen.SolidTile(tileX, tileY - 1))) y = 0;
+                float num8 = (float)(256 - num) / 32f;
+                int y = 4;
+                if (tile3.LiquidAmount == 0 && (num4 != 0 || !WorldGen.SolidTile(tileX, tileY - 1)))
+                    y = 0;
 
-                var num5 = (int)num8 * 2;
+                int num5 = (int)num8 * 2;
                 if (tileCache.Slope != 0)
                 {
-                    vector = new Vector2((float)(tileX * 16), (float)(tileY * 16 + num5));
-                    liquidSize = new Rectangle(0, num5, 16, 16 - num5);
+                    vector = new((float)(tileX * 16), (float)(tileY * 16 + num5));
+                    liquidSize = new(0, num5, 16, 16 - num5);
                 }
                 else if ((flag && flag2) || tileCache.IsHalfBlock)
                 {
-                    vector = new Vector2((float)(tileX * 16), (float)(tileY * 16 + num5));
-                    liquidSize = new Rectangle(0, y, 16, 16 - num5);
+                    vector = new((float)(tileX * 16), (float)(tileY * 16 + num5));
+                    liquidSize = new(0, y, 16, 16 - num5);
                 }
                 else if (flag)
                 {
-                    vector = new Vector2((float)(tileX * 16), (float)(tileY * 16 + num5));
-                    liquidSize = new Rectangle(0, y, 4, 16 - num5);
+                    vector = new((float)(tileX * 16), (float)(tileY * 16 + num5));
+                    liquidSize = new(0, y, 4, 16 - num5);
                 }
                 else
                 {
-                    vector = new Vector2((float)(tileX * 16 + 12), (float)(tileY * 16 + num5));
-                    liquidSize = new Rectangle(0, y, 4, 16 - num5);
+                    vector = new((float)(tileX * 16 + 12), (float)(tileY * 16 + num5));
+                    liquidSize = new(0, y, 4, 16 - num5);
                 }
             }
         }
 
         var position = vector - screenPosition + screenOffset;
-        var num6 = 1f;
+        float num6 = 1f;
         if ((double)tileY <= Main.worldSurface || num6 > 1f)
         {
             num6 = 1f;
             if (tileCache.WallType == 21)
                 num6 = 0.9f;
-            else if (tileCache.WallType > 0) num6 = 0.6f;
+            else if (tileCache.WallType > 0)
+                num6 = 0.6f;
         }
 
-        if (tileCache.IsHalfBlock && tile3.LiquidAmount > 0 && tileCache.WallType > 0) num6 = 0f;
+        if (tileCache.IsHalfBlock && tile3.LiquidAmount > 0 && tileCache.WallType > 0)
+            num6 = 0f;
 
-        if (num3 == 4 && tile2.LiquidAmount == 0 && !WorldGen.SolidTile(tileX - 1, tileY)) num6 = 0f;
+        if (num3 == 4 && tile2.LiquidAmount == 0 && !WorldGen.SolidTile(tileX - 1, tileY))
+            num6 = 0f;
 
-        if (num3 == 3 && tile.LiquidAmount == 0 && !WorldGen.SolidTile(tileX + 1, tileY)) num6 = 0f;
+        if (num3 == 3 && tile.LiquidAmount == 0 && !WorldGen.SolidTile(tileX + 1, tileY))
+            num6 = 0f;
 
         ref var bottomLeftColor = ref vertices.BottomLeftColor;
         bottomLeftColor *= num6;
@@ -1181,9 +1453,9 @@ public partial class BiomeLavaMod : Mod
         topLeftColor *= num6;
         ref var topRightColor = ref vertices.TopRightColor;
         topRightColor *= num6;
-        var flag7 = false;
+        bool flag7 = false;
         if (flag6)
-            for (var i = 0; i < 7 /*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; i++)
+            for (int i = 0; i < 7 /*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; i++)
             {
                 if (lavaLiquidAlpha[i] > 0f && i != num2)
                 {
@@ -1194,7 +1466,7 @@ public partial class BiomeLavaMod : Mod
             }
 
         var colors = vertices;
-        var num7 = flag7 ? lavaLiquidAlpha[num2] : 1f;
+        float num7 = flag7 ? lavaLiquidAlpha[num2] : 1f;
         ref var bottomLeftColor2 = ref colors.BottomLeftColor;
         bottomLeftColor2 *= num7;
         ref var bottomRightColor2 = ref colors.BottomRightColor;
@@ -1208,9 +1480,10 @@ public partial class BiomeLavaMod : Mod
 
     private void DrawPartialLiquid(bool behindBlocks, Tile tileCache, ref Vector2 position, ref Rectangle liquidSize, int liquidType, ref VertexColors colors)
     {
-        var num = (int)tileCache.Slope;
-        var flag = !TileID.Sets.BlocksWaterDrawingBehindSelf[tileCache.TileType];
-        if (!behindBlocks) flag = false;
+        int num = (int)tileCache.Slope;
+        bool flag = !TileID.Sets.BlocksWaterDrawingBehindSelf[tileCache.TileType];
+        if (!behindBlocks)
+            flag = false;
 
         if (flag || num == 0)
         {
