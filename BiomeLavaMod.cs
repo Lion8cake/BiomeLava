@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using BiomeLava.Bubbles;
-using BiomeLava.Droplets;
 using MonoMod.Cil;
 using Terraria.GameContent.Drawing;
 using Terraria.GameContent.Liquid;
@@ -24,6 +22,8 @@ public partial class BiomeLavaMod : Mod
         get => LavaStyleLoader.Instance.LavaAlpha;
         set => LavaStyleLoader.Instance.LavaAlpha = value;
     }
+
+    private static List<float> _alphaCache;
 
     #region ILEdits and Detours
 
@@ -588,8 +588,7 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchStloc2()
         );
 
-        float[] alphaSave = LavaAlpha.ToArray();
-        c.EmitDelegate(() => alphaSave = LavaAlpha.ToArray());
+        c.EmitDelegate<Action>(static () => _alphaCache = LavaAlpha.ToList());
 
         c.GotoNext(
             MoveType.Before,
@@ -669,7 +668,7 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchStsfld<Main>("liquidAlpha")
         );
 
-        c.EmitDelegate(() => LavaAlpha = alphaSave.ToList());
+        c.EmitDelegate<Action>(static () => LavaAlpha = _alphaCache.ToList());
     }
 
     private static void AddTileLiquidDrawing(ILContext il)
