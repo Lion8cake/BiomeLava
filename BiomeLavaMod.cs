@@ -48,8 +48,6 @@ public partial class BiomeLavaMod : Mod
         1f
     };
 
-    // TODO: use curried function for ILEdits to reduce code duplication
-
     #region Preparing IL Edits and Detours
 
     public override void Load()
@@ -68,24 +66,22 @@ public partial class BiomeLavaMod : Mod
         // Bubbles and Droplets
         IL_TileDrawing.EmitLiquidDrops += ReplaceLavaDroplet;
         IL_LiquidRenderer.InternalPrepareDraw += ReplaceLavaBubble;
+        IL_Player.Update += LavaSplashPlayer;
+        IL_NPC.Collision_WaterCollision += LavaSplashNPC;
+        IL_Projectile.Update += LavaSplashProjectile;
+        IL_Item.MoveInWorld += LavaSplashItem;
 
+        // Lighting
+        On_TileLightScanner.ApplyLiquidLight += ModifyLavaLight;
+        IL_Main.oldDrawWater += BlockLavaRetroLighting;
+
+        // Drawing
         IL_Main.DoDraw += IL_Main_DoDraw;
         IL_Main.RenderWater += IL_Main_RenderWater;
         IL_Main.RenderBackground += IL_Main_RenderBackground;
         IL_Main.DrawCapture += DrawLavatoCapture;
-
-        On_TileDrawing.DrawTile_LiquidBehindTile += BlockLavaDrawingForSlopes;
-
         IL_TileDrawing.Draw += AddTileLiquidDrawing;
-
-        On_TileLightScanner.ApplyLiquidLight += LavaLightEditor;
-
-
-        IL_Main.oldDrawWater += BlockRetroLightingLava;
-        IL_Player.Update += SplashPlayerLava;
-        IL_NPC.Collision_WaterCollision += SplashNPCLava;
-        IL_Projectile.Update += SplashProjectileLava;
-        IL_Item.MoveInWorld += SplashItemLava;
+        On_TileDrawing.DrawTile_LiquidBehindTile += BlockLavaDrawingForSlopes;
     }
 
     public override void Unload()
@@ -98,23 +94,22 @@ public partial class BiomeLavaMod : Mod
         // Bubbles and Droplets
         IL_TileDrawing.EmitLiquidDrops -= ReplaceLavaDroplet;
         IL_LiquidRenderer.InternalPrepareDraw -= ReplaceLavaBubble;
+        IL_Player.Update -= LavaSplashPlayer;
+        IL_NPC.Collision_WaterCollision -= LavaSplashNPC;
+        IL_Projectile.Update -= LavaSplashProjectile;
+        IL_Item.MoveInWorld -= LavaSplashItem;
 
+        // Lighting
+        On_TileLightScanner.ApplyLiquidLight -= ModifyLavaLight;
+        IL_Main.oldDrawWater -= BlockLavaRetroLighting;
+
+        // Drawing
         IL_Main.DoDraw -= IL_Main_DoDraw;
         IL_Main.RenderWater -= IL_Main_RenderWater;
         IL_Main.RenderBackground -= IL_Main_RenderBackground;
         IL_Main.DrawCapture -= DrawLavatoCapture;
-
-        On_TileDrawing.DrawTile_LiquidBehindTile -= BlockLavaDrawingForSlopes;
-
         IL_TileDrawing.Draw -= AddTileLiquidDrawing;
-
-        On_TileLightScanner.ApplyLiquidLight -= LavaLightEditor;
-
-        IL_Main.oldDrawWater -= BlockRetroLightingLava;
-        IL_Player.Update -= SplashPlayerLava;
-        IL_NPC.Collision_WaterCollision -= SplashNPCLava;
-        IL_Projectile.Update -= SplashProjectileLava;
-        IL_Item.MoveInWorld -= SplashItemLava;
+        On_TileDrawing.DrawTile_LiquidBehindTile -= BlockLavaDrawingForSlopes;
     }
 
     #endregion
@@ -176,143 +171,362 @@ public partial class BiomeLavaMod : Mod
         c.EmitDelegate(static (int type) => Active ? Style.DropletGoreID : type);
     }
 
+    private static int ModifyLavaBubbleType(int type)
+    {
+        return Active ? Style.SplashDustID : type;
+    }
+
     private static void ReplaceLavaBubble(ILContext il)
     {
         var c = new ILCursor(il);
 
-        c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(16), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
-        c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(8), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
+        c.GotoNext(MoveType.After,
+            static i => i.MatchLdcI4(16),
+            static i => i.MatchLdcI4(16),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchLdcI4(16),
+            static i => i.MatchLdcI4(8),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
     }
 
-    private void SplashItemLava(ILContext il)
+    private static void LavaSplashPlayer(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(15), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(23), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(172),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(180),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
     }
 
-    private void SplashProjectileLava(ILContext il)
+    private static void LavaSplashNPC(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(22), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(30), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(10),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(19),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
     }
 
-    private void SplashNPCLava(ILContext il)
+    private static void LavaSplashProjectile(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(10), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(19), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(22),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(30),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
     }
 
-    private void SplashPlayerLava(ILContext il)
+    private static void LavaSplashItem(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(172), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
-        c.GotoNext(MoveType.After, i => i.MatchStloc(180), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"),
-            i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-            i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2),
-            i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-            i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(),
-            i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-        c.EmitDelegate<Func<int, int>>(type => Active ? Style.SplashDustID : type);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(15),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
+
+        c.GotoNext(MoveType.After,
+            static i => i.MatchStloc(23),
+            static i => i.MatchBr(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("X"),
+            static i => i.MatchLdcR4(6),
+            static i => i.MatchSub(),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdflda<Entity>("position"),
+            static i => i.MatchLdfld<Vector2>("Y"),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("height"),
+            static i => i.MatchLdcI4(2),
+            static i => i.MatchDiv(),
+            static i => i.MatchConvR4(),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcR4(8),
+            static i => i.MatchSub(),
+            static i => i.MatchNewobj(out _),
+            static i => i.MatchLdarg0(),
+            static i => i.MatchLdfld<Entity>("width"),
+            static i => i.MatchLdcI4(12),
+            static i => i.MatchAdd(),
+            static i => i.MatchLdcI4(24),
+            static i => i.MatchLdcI4(35)
+        );
+
+        c.EmitDelegate(ModifyLavaBubbleType);
     }
 
     #endregion
 
+    #region Lighting
+
+
+    private static void ModifyLavaLight(On_TileLightScanner.orig_ApplyLiquidLight orig, TileLightScanner self, Tile tile, ref Vector3 lightColor)
+    {
+        orig.Invoke(self, tile, ref lightColor);
+
+        if (tile.LiquidType != LiquidID.Lava)
+            return;
+
+        var num = Style.LightColor.R / 255f;
+        var num2 = Style.LightColor.G / 255f;
+        var num3 = Style.LightColor.B / 255f;
+        var (r, g, b, _) = Style.LightColor.ToVector3();
+        var colorManipulator = (float)(270 - Main.mouseTextColor) / 900f;
+        num += colorManipulator;
+        num2 += colorManipulator;
+        num3 += colorManipulator;
+        if (lightColor.X < num) lightColor.X = num;
+
+        if (lightColor.Y < num2) lightColor.Y = num2;
+
+        if (lightColor.Z < num3) lightColor.Z = num3;
+    }
+
+    private static void BlockLavaRetroLighting(ILContext il)
+    {
+        var c = new ILCursor(il);
+
+        ILLabel l = null;
+        c.GotoNext(MoveType.After, static i => i.MatchCgt(), static i => i.MatchLdarg1(), static i => i.MatchOr(), static i => i.MatchBrfalse(out l));
+        if (l == null) return;
+        c.EmitLdloc(12);
+        c.EmitLdloc(11);
+        c.EmitDelegate((int i, int j) => { return Main.tile[i, j].LiquidType == LiquidID.Lava; });
+        c.EmitBrtrue(l);
+    }
+
+    #endregion
 
     private void DrawLavatoCapture(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdsfld<Main>("liquidAlpha"), i => i.MatchCall(out _), i => i.MatchStloc2());
+        c.GotoNext(MoveType.After, static i => i.MatchLdsfld<Main>("liquidAlpha"), static i => i.MatchCall(out _), static i => i.MatchStloc2());
         var alphaSave = lavaLiquidAlpha.ToArray();
         c.EmitDelegate(() => { alphaSave = lavaLiquidAlpha.ToArray(); });
-        c.GotoNext(MoveType.Before, i => i.MatchLdcI4(0), i => i.MatchStloc(34), i => i.MatchBr(out _), i => i.MatchLdloc(34), i => i.MatchLdcI4(1),
-            i => i.MatchBeq(out _));
+        c.GotoNext(MoveType.Before, static i => i.MatchLdcI4(0), static i => i.MatchStloc(34), static i => i.MatchBr(out _), static i => i.MatchLdloc(34), static i => i.MatchLdcI4(1),
+            static i => i.MatchBeq(out _));
         c.EmitLdloc(8);
         c.EmitDelegate((CaptureBiome biome) =>
         {
             // TODO: lavaLiquid alpha either 0f or 1f here
         });
-        c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(1), i => i.MatchLdsfld<Main>("waterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1),
-            i => i.MatchCall<Main>("DrawLiquid"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchLdsfld<Main>("waterStyle"), static i => i.MatchLdcR4(1), static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawLiquid"));
         c.EmitDelegate(() => { DrawLiquid(true, Style); });
-        c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(1), i => i.MatchLdsfld<Main>("bloodMoon"), i => i.MatchBrtrue(out _), i => i.MatchLdloc(8),
-            i => i.MatchLdfld<CaptureBiome>("WaterStyle"), i => i.MatchBr(out _), i => i.MatchLdcI4(9), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1),
-            i => i.MatchCall<Main>("DrawLiquid"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchLdsfld<Main>("bloodMoon"), static i => i.MatchBrtrue(out _), static i => i.MatchLdloc(8),
+            static i => i.MatchLdfld<CaptureBiome>("WaterStyle"), static i => i.MatchBr(out _), static i => i.MatchLdcI4(9), static i => i.MatchLdcR4(1), static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawLiquid"));
         c.EmitDelegate(() => { DrawLiquid(true, Style); });
-        c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(0), i => i.MatchLdsfld<Main>("waterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1),
-            i => i.MatchCall<Main>("DrawLiquid"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchLdsfld<Main>("waterStyle"), static i => i.MatchLdcR4(1), static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawLiquid"));
         c.EmitDelegate(() => { DrawLiquid(false, Style); });
-        c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(0), i => i.MatchLdloc(8), i => i.MatchLdfld<CaptureBiome>("WaterStyle"), i => i.MatchLdcR4(1),
-            i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchLdloc(8), static i => i.MatchLdfld<CaptureBiome>("WaterStyle"), static i => i.MatchLdcR4(1),
+            static i => i.MatchLdcI4(1), static i => i.MatchCall<Main>("DrawLiquid"));
         c.EmitDelegate(() => { DrawLiquid(false, Style); });
-        c.GotoNext(MoveType.After, i => i.MatchLdloc2(), i => i.MatchStsfld<Main>("liquidAlpha"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdloc2(), static i => i.MatchStsfld<Main>("liquidAlpha"));
         c.EmitDelegate(() => { lavaLiquidAlpha = alphaSave; });
-    }
-
-    private void LavaLightEditor(On_TileLightScanner.orig_ApplyLiquidLight orig, TileLightScanner self, Tile tile, ref Vector3 lightColor)
-    {
-        orig.Invoke(self, tile, ref lightColor);
-        if (tile.LiquidType == LiquidID.Lava)
-        {
-            var num = Style.LightColor.R / 255f;
-            var num2 = Style.LightColor.G / 255f;
-            var num3 = Style.LightColor.B / 255f;
-            var colorManipulator = (float)(270 - Main.mouseTextColor) / 900f;
-            num += colorManipulator;
-            num2 += colorManipulator;
-            num3 += colorManipulator;
-            if (lightColor.X < num) lightColor.X = num;
-
-            if (lightColor.Y < num2) lightColor.Y = num2;
-
-            if (lightColor.Z < num3) lightColor.Z = num3;
-        }
     }
 
     private void BlockLavaDrawingForSlopes(On_TileDrawing.orig_DrawTile_LiquidBehindTile orig, TileDrawing self, bool solidLayer, bool inFrontOfPlayers,
@@ -322,9 +536,7 @@ public partial class BiomeLavaMod : Mod
         var tile2 = Main.tile[tileX - 1, tileY];
         var tile3 = Main.tile[tileX, tileY - 1];
         var tile4 = Main.tile[tileX, tileY + 1];
-        if (tileCache.LiquidType == LiquidID.Lava || tile.LiquidType == LiquidID.Lava || tile2.LiquidType == LiquidID.Lava || tile3.LiquidType == LiquidID.Lava ||
-            tile4.LiquidType == LiquidID.Lava)
-            return;
+        if (tileCache.LiquidType == LiquidID.Lava || tile.LiquidType == LiquidID.Lava || tile2.LiquidType == LiquidID.Lava || tile3.LiquidType == LiquidID.Lava || tile4.LiquidType == LiquidID.Lava) return;
 
         orig.Invoke(self, solidLayer, inFrontOfPlayers, waterStyleOverride, screenPosition, screenOffset, tileX, tileY, tileCache);
     }
@@ -332,8 +544,8 @@ public partial class BiomeLavaMod : Mod
     private void AddTileLiquidDrawing(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdarg1(), i => i.MatchLdcI4(0), i => i.MatchLdarg(out var waterStyleOverride), i => i.MatchLdloc1(),
-            i => i.MatchLdloc2(), i => i.MatchLdloc(12), i => i.MatchLdloc(13), i => i.MatchLdloc(14), i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdarg1(), static i => i.MatchLdcI4(0), static i => i.MatchLdarg(out var waterStyleOverride), static i => i.MatchLdloc1(),
+            static i => i.MatchLdloc2(), static i => i.MatchLdloc(12), static i => i.MatchLdloc(13), static i => i.MatchLdloc(14), static i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile"));
         c.EmitLdloc1();
         c.EmitLdloc2();
         c.EmitLdloc(12);
@@ -342,53 +554,41 @@ public partial class BiomeLavaMod : Mod
         c.EmitDelegate((Vector2 unscaledPosition, Vector2 vector, int j, int i, Tile tile) => { DrawTile_LiquidBehindTile(false, false, Style, unscaledPosition, vector, j, i, tile); });
     }
 
-    private void BlockRetroLightingLava(ILContext il)
-    {
-        var c = new ILCursor(il);
-        ILLabel l = null;
-        c.GotoNext(MoveType.After, i => i.MatchCgt(), i => i.MatchLdarg1(), i => i.MatchOr(), i => i.MatchBrfalse(out l));
-        if (l == null) return;
-        c.EmitLdloc(12);
-        c.EmitLdloc(11);
-        c.EmitDelegate((int i, int j) => { return Main.tile[i, j].LiquidType == LiquidID.Lava; });
-        c.EmitBrtrue(l);
-    }
-
     private void BlockLavaDrawing(ILContext il)
     {
         var c = new ILCursor(il);
         var l = c.DefineLabel();
-        c.GotoNext(MoveType.After, i => i.MatchLdloc2(), i => i.MatchLdfld<LiquidDrawCache>("Type"), i => i.MatchStloc(8));
+        c.GotoNext(MoveType.After, static i => i.MatchLdloc2(), static i => i.MatchLdfld<LiquidDrawCache>("Type"), static i => i.MatchStloc(8));
         c.EmitLdloc3();
         c.EmitLdloc(4);
         c.EmitDelegate((int i, int j) => { return Main.tile[i, j].LiquidType == 1; });
         c.EmitBrtrue(l);
-        c.GotoNext(MoveType.Before, i => i.MatchLdloc(4), i => i.MatchLdcI4(1), i => i.MatchAdd(), i => i.MatchStloc(4));
+        c.GotoNext(MoveType.Before, static i => i.MatchLdloc(4), static i => i.MatchLdcI4(1), static i => i.MatchAdd(), static i => i.MatchStloc(4));
         l.Target = c.Next;
     }
 
     private void IL_Main_DoDraw(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdsfld<Main>("drawToScreen"), i => i.MatchBrfalse(out _), i => i.MatchLdarg0(), i => i.MatchLdcI4(1),
-            i => i.MatchCall<Main>("DrawWaters"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdsfld<Main>("drawToScreen"), static i => i.MatchBrfalse(out _), static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1),
+            static i => i.MatchCall<Main>("DrawWaters"));
         c.EmitDelegate(() => { DrawLavas(true); });
-        c.GotoNext(MoveType.After, i => i.MatchLdsfld<Main>("drawToScreen"), i => i.MatchBrfalse(out _), i => i.MatchLdarg0(), i => i.MatchLdcI4(0),
-            i => i.MatchCall<Main>("DrawWaters"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdsfld<Main>("drawToScreen"), static i => i.MatchBrfalse(out _), static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0),
+            static i => i.MatchCall<Main>("DrawWaters"));
         c.EmitDelegate(() => { DrawLavas(); });
     }
 
     private void IL_Main_RenderWater(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(0), i => i.MatchCall<Main>("DrawWaters"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(0), static i => i.MatchCall<Main>("DrawWaters"));
         c.EmitDelegate(() => { DrawLavas(); });
     }
 
     private void IL_Main_RenderBackground(ILContext il)
     {
         var c = new ILCursor(il);
-        c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawWaters"));
+        c.GotoNext(MoveType.After, static i => i.MatchLdarg0(), static i => i.MatchLdcI4(1), static i => i.MatchCall<Main>("DrawWaters"));
         c.EmitDelegate(() => { DrawLavas(true); });
     }
 
@@ -430,28 +630,29 @@ public partial class BiomeLavaMod : Mod
         DrawLiquid(isBackground, Style, 1f); // TODO: lavaLiquidStyle
     }
 
-    protected internal void DrawLiquid(bool bg = false, ModLavaStyle lavaStyle = default, float Alpha = 1f, bool drawSinglePassLiquids = true)
+    protected internal void DrawLiquid(bool bg = false, float Alpha = 1f, bool drawSinglePassLiquids = true)
     {
         if (!Lighting.NotRetro)
         {
-            oldDrawWater(bg, lavaStyle, Alpha);
+            oldDrawWater(bg, Alpha);
             return;
         }
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var drawOffset = (Vector2)(Main.drawToScreen ? Vector2.Zero : new Vector2((float)Main.offScreenRange, (float)Main.offScreenRange)) - Main.screenPosition;
-        if (bg) DrawLiquidBehindTiles(lavaStyle);
+        if (bg) DrawLiquidBehindTiles();
 
-        DrawLava(Main.spriteBatch, drawOffset, lavaStyle, Alpha, bg);
+        DrawLava(Main.spriteBatch, drawOffset, Alpha, bg);
         if (!bg) TimeLogger.DrawTime(4, stopwatch.Elapsed.TotalMilliseconds);
     }
 
-    public unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, ModLavaStyle LavaStyle, float globalAlpha, bool isBackgroundDraw)
+    public unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, float globalAlpha, bool isBackgroundDraw)
     {
         Main.tileBatch.End();
         var drawArea = LiquidRenderer.Instance._drawArea;
         Main.tileBatch.Begin();
+
         fixed (LiquidDrawCache* ptr3 = &LiquidRenderer.Instance._drawCache[0])
         {
             var ptr2 = ptr3;
@@ -469,7 +670,6 @@ public partial class BiomeLavaMod : Mod
 
                         var liquidOffset = ptr2->LiquidOffset;
                         var num = globalAlpha;
-                        var num2 = LavaStyle;
                         Lighting.GetCornerColors(i, j, out var vertices);
                         ref var bottomLeftColor = ref vertices.BottomLeftColor;
                         bottomLeftColor *= num;
@@ -480,7 +680,7 @@ public partial class BiomeLavaMod : Mod
                         ref var topRightColor = ref vertices.TopRightColor;
                         topRightColor *= num;
                         Main.DrawTileInWater(drawOffset, i, j);
-                        Main.tileBatch.Draw(LavaStyle.LavaTexture.Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle,
+                        Main.tileBatch.Draw(Style.LavaTexture.Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle,
                             vertices, Vector2.Zero, 1f, (SpriteEffects)0);
                     }
 
@@ -492,7 +692,7 @@ public partial class BiomeLavaMod : Mod
         Main.tileBatch.End();
     }
 
-    public void oldDrawWater(bool bg = false, ModLavaStyle Style = default, float Alpha = 1f)
+    public void oldDrawWater(bool bg = false, float Alpha = 1f)
     {
         var num = 0f;
         var num12 = 99999f;
