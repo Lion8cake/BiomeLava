@@ -24,7 +24,19 @@ public static class BiomeLavaAPI
         if (!BiomeLavaModEnabled)
             return;
 
-        var message = BiomeLavaMod.Call(nameof(AddLavaStyle), lavaTexture, lavaBlockTexture, lavaSlopeTexture, lavaFallTexture, lavaFallUsesGlowMask, splashDustID, dropletGoreID, lightColor, inZone);
+        object message = BiomeLavaMod.Call(
+            nameof(AddLavaStyle),
+            lavaTexture,
+            lavaBlockTexture,
+            lavaSlopeTexture,
+            lavaFallTexture,
+            lavaFallUsesGlowMask,
+            splashDustID,
+            dropletGoreID,
+            lightColor,
+            inZone
+        );
+
         BiomeLavaMod.Logger.Info(message);
     }
 }
@@ -32,16 +44,13 @@ public static class BiomeLavaAPI
 // Mod.Call implementation
 partial class BiomeLavaMod
 {
-    private Dictionary<string, Func<object[], object>> commands = new()
-    {
-        [nameof(BiomeLavaAPI.AddLavaStyle)] = AddLavaStyleCall
-    };
+    private Dictionary<string, Func<object[], object>> commands = new() { [nameof(BiomeLavaAPI.AddLavaStyle)] = AddLavaStyleCall, };
 
     private static bool ValidateArg<T>(object[] args, int index, out T arg)
     {
         arg = default;
 
-        if (args.Length < index + 1)
+        if (args.Length <= index)
             return false;
 
         if (args[index] is not T)
@@ -53,7 +62,7 @@ partial class BiomeLavaMod
 
     public override object Call(params object[] args)
     {
-        if (ValidateArg<string>(args, 0, out var commandName) && commands.TryGetValue(commandName, out var command))
+        if (ValidateArg<string>(args, 0, out string commandName) && commands.TryGetValue(commandName, out var command))
             return command(args);
 
         return "Invalid command";
@@ -61,32 +70,34 @@ partial class BiomeLavaMod
 
     private static object AddLavaStyleCall(params object[] args)
     {
-        var success = true;
+        bool success = true;
         success &= ValidateArg<Asset<Texture2D>>(args, 1, out var lavaTexture);
         success &= ValidateArg<Asset<Texture2D>>(args, 2, out var lavaBlockTexture);
         success &= ValidateArg<Asset<Texture2D>>(args, 3, out var lavaSlopeTexture);
         success &= ValidateArg<Asset<Texture2D>>(args, 4, out var lavaFallTexture);
 
-        success &= ValidateArg<bool>(args, 5, out var lavaFallUsesGlowMask);
-        success &= ValidateArg<int>(args, 6, out var splashDustID);
-        success &= ValidateArg<int>(args, 7, out var dropletGoreID);
+        success &= ValidateArg<bool>(args, 5, out bool lavaFallUsesGlowMask);
+        success &= ValidateArg<int>(args, 6, out int splashDustID);
+        success &= ValidateArg<int>(args, 7, out int dropletGoreID);
         success &= ValidateArg<Color>(args, 8, out var lightColor);
         success &= ValidateArg<Func<bool>>(args, 9, out var inZone);
 
         if (!success)
             return $"Invalid args for {nameof(BiomeLavaAPI.AddLavaStyle)}";
 
-        LavaStyleLoader.Instance.AddLavaStyle(new ModLavaStyle(
-            lavaTexture,
-            lavaBlockTexture,
-            lavaSlopeTexture,
-            lavaFallTexture,
-            lavaFallUsesGlowMask,
-            splashDustID,
-            dropletGoreID,
-            lightColor,
-            inZone
-        ));
+        LavaStyleLoader.Instance.AddLavaStyle(
+            new(
+                lavaTexture,
+                lavaBlockTexture,
+                lavaSlopeTexture,
+                lavaFallTexture,
+                lavaFallUsesGlowMask,
+                splashDustID,
+                dropletGoreID,
+                lightColor,
+                inZone
+            )
+        );
 
         return "Successfully added new ModLavaStyle";
     }
