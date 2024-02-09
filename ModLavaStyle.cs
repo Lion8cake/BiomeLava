@@ -1,7 +1,7 @@
 ﻿namespace BiomeLava;
 
 // TODO: allow lava styles to add different buffs
-public record struct ModLavaStyle(
+public readonly record struct ModLavaStyle(
     Asset<Texture2D> LavaTexture,
     Asset<Texture2D> LavaBlockTexture,
     Asset<Texture2D> LavaSlopeTexture,
@@ -13,5 +13,5 @@ public record struct ModLavaStyle(
     Func<bool> InZone
 )
 {
-    public int Type { get; internal set; }
-};
+    public int Type => LavaStyleLoader.Instance.LavaStyles.ToList().IndexOf(this);
+}

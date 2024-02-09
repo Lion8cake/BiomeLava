@@ -3,7 +3,7 @@ using BiomeLava.Droplets;
 
 namespace BiomeLava;
 
-// TODO: lavaLiquidAlpha?
+// TODO: lavaLiquidAlpha
 public class LavaStyleLoader : ModSystem
 {
     public static LavaStyleLoader Instance => ModContent.GetInstance<LavaStyleLoader>();
@@ -15,7 +15,7 @@ public class LavaStyleLoader : ModSystem
     public IEnumerable<ModLavaStyle> ActiveStyles
         => _lavaStyles
             .Where(l => LavaAlpha[l.Type] > 0f)
-            .OrderBy(l => LavaAlpha[l.Type]);
+            .OrderByDescending(l => LavaAlpha[l.Type]);
 
     public List<float> LavaAlpha = new();
 
@@ -26,8 +26,7 @@ public class LavaStyleLoader : ModSystem
     public void AddLavaStyle(ModLavaStyle style)
     {
         _lavaStyles.Add(style);
-        style.Type = LavaStyleCount;
-        LavaAlpha.Add(1f);
+        LavaAlpha.Add(0f);
         LavaStyleCount++;
     }
 
