@@ -100,17 +100,20 @@ public partial class BiomeLavaMod : Mod
         if (Active && waterfallType == WaterStyleID.Lava)
         {
             // TODO: lavaLiquidAlpha
-            Main.spriteBatch.Draw(
-                Style.LavaFallTexture.Value,
-                position,
-                sourceRect,
-                color,
-                0f,
-                default,
-                1f,
-                effects,
-                0f
-            );
+            foreach (var style in Styles)
+            {
+                Main.spriteBatch.Draw(
+                    style.LavaFallTexture.Value,
+                    position,
+                    sourceRect,
+                    color * LavaAlpha[style.Type],
+                    0f,
+                    default,
+                    1f,
+                    effects,
+                    0f
+                );
+            }
 
             return;
         }
@@ -474,7 +477,7 @@ public partial class BiomeLavaMod : Mod
     {
         orig.Invoke(self, tile, ref lightColor);
 
-        if (tile.LiquidType != LiquidID.Lava)
+        if (!Active || tile.LiquidType != LiquidID.Lava)
             return;
 
         float r = Style.LightColor.ToVector3().X;
@@ -760,14 +763,18 @@ public partial class BiomeLavaMod : Mod
     {
         Main.drewLava = false;
 
-        if (!isBackground)
+        if (!isBackground) // ReSharper disable once RemoveRedundantBraces
+        {
             for (int i = 0; i < LavaStyleLoader.Instance.LavaStyleCount; i++)
             {
-                if (LavaStyleLoader.Instance.LavaStyles[i].InZone())
+                if (!LavaStyleLoader.Instance.LavaStyles[i].InZone())
                     LavaAlpha[i] = Math.Max(LavaAlpha[i] - 0.2f, 0f);
                 else
                     LavaAlpha[i] = Math.Min(LavaAlpha[i] + 0.2f, 1f);
             }
+
+        if (!Active)
+            return;
 
         if (!Main.drawToScreen && !isBackground)
         {
