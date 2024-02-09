@@ -761,6 +761,9 @@ public partial class BiomeLavaMod : Mod
 
     private static void DrawLavas(bool isBackground = false)
     {
+        if (!Active)
+            return;
+
         Main.drewLava = false;
 
         if (!isBackground) // ReSharper disable once RemoveRedundantBraces
@@ -772,6 +775,27 @@ public partial class BiomeLavaMod : Mod
                 else
                     LavaAlpha[i] = Math.Min(LavaAlpha[i] + 0.2f, 1f);
             }
+            /*
+            Main.NewText("Active: " + Active);
+            Main.NewText("Type: " + Style.Type);
+
+            string text = "Alphas: ";
+            foreach (float alpha in LavaAlpha)
+            {
+                text += alpha + ", ";
+            }
+
+            Main.NewText(text);
+
+            string text2 = "Active Styles: ";
+            foreach (var style in Styles)
+            {
+                text2 += style.Type + ", ";
+            }
+
+            Main.NewText(text2);
+            //*/
+        }
 
         if (!Active)
             return;
@@ -796,6 +820,9 @@ public partial class BiomeLavaMod : Mod
 
     private static void DrawLiquid(bool bg = false, float Alpha = 1f, bool drawSinglePassLiquids = true)
     {
+        if (!Active)
+            return;
+
         if (!Lighting.NotRetro)
         {
             oldDrawWater(bg, Alpha);
@@ -815,6 +842,9 @@ public partial class BiomeLavaMod : Mod
 
     private static unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, float globalAlpha, bool isBackgroundDraw)
     {
+        if (!Active)
+            return;
+
         Main.tileBatch.End();
         var drawArea = LiquidRenderer.Instance._drawArea;
         Main.tileBatch.Begin();
@@ -867,6 +897,9 @@ public partial class BiomeLavaMod : Mod
 
     private static void oldDrawWater(bool bg = false, float Alpha = 1f)
     {
+        if (!Active)
+            return;
+
         float num = 0f;
         float num12 = 99999f;
         float num23 = 99999f;
@@ -1263,6 +1296,9 @@ public partial class BiomeLavaMod : Mod
 
     private static void DrawLiquidBehindTiles()
     {
+        if (!Active)
+            return;
+
         var unscaledPosition = Main.Camera.UnscaledPosition;
         Vector2 vector = new((float)Main.offScreenRange, (float)Main.offScreenRange);
         if (Main.drawToScreen)
@@ -1326,6 +1362,9 @@ public partial class BiomeLavaMod : Mod
         int tileY,
         Tile tileCache)
     {
+        if (!Active)
+            return;
+
         var tile = Main.tile[tileX + 1, tileY];
         var tile2 = Main.tile[tileX - 1, tileY];
         var tile3 = Main.tile[tileX, tileY - 1];
@@ -1503,6 +1542,9 @@ public partial class BiomeLavaMod : Mod
 
     private static void DrawPartialLiquid(bool behindBlocks, Tile tileCache, ref Vector2 position, ref Rectangle liquidSize, int liquidType, ref VertexColors colors)
     {
+        if (!Active)
+            return;
+
         int num = (int)tileCache.Slope;
         bool flag = !TileID.Sets.BlocksWaterDrawingBehindSelf[tileCache.TileType];
         if (!behindBlocks)
