@@ -3,12 +3,10 @@ using BiomeLava.Droplets;
 
 namespace BiomeLava;
 
-// TODO: lavaLiquidAlpha
 public class LavaStyleLoader : ModSystem
 {
     public static LavaStyleLoader Instance => ModContent.GetInstance<LavaStyleLoader>();
 
-    // TODO: priorities, transitions
     public bool IsStyleActive => ActiveStyles.Any();
     public ModLavaStyle ActiveStyle => ActiveStyles.First();
 
@@ -42,7 +40,7 @@ public class LavaStyleLoader : ModSystem
             "Corruption",
             ModContent.DustType<CorruptionLavaDust>(),
             ModContent.GoreType<CorruptionDroplet>(),
-            true,
+            false,
             new(0.33f, 0.55f, 0.11f),
             static () => Main.LocalPlayer.ZoneCorrupt && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.CorruptionLava
         );
@@ -51,7 +49,7 @@ public class LavaStyleLoader : ModSystem
             "Crimson",
             ModContent.DustType<CrimsonLavaDust>(),
             ModContent.GoreType<CrimsonDroplet>(),
-            true,
+            false,
             new(0.55f, 0.44f, 0.11f),
             static () => Main.LocalPlayer.ZoneCrimson && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.CrimsonLava
         );
@@ -60,7 +58,7 @@ public class LavaStyleLoader : ModSystem
             "Hallow",
             ModContent.DustType<HallowLavaDust>(),
             ModContent.GoreType<HallowDroplet>(),
-            true,
+            false,
             new(0.33f, 0.77f, 0.99f),
             static () => Main.LocalPlayer.ZoneHallow && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.HallowLava
         );
@@ -87,7 +85,7 @@ public class LavaStyleLoader : ModSystem
             "Desert",
             ModContent.DustType<DesertLavaDust>(),
             ModContent.GoreType<DesertDroplet>(),
-            true,
+            false,
             new(0.77f, 0.44f, 0.11f),
             static () => Main.LocalPlayer.ZoneDesert && !Main.LocalPlayer.ZoneUnderworldHeight && BiomeLavaConfig.Instance.DesertLava
         );

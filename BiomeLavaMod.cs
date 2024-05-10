@@ -9,19 +9,17 @@ using static Terraria.GameContent.Liquid.LiquidRenderer;
 
 namespace BiomeLava;
 
+// TODO: lerp lighting color for lavafalls and lava?
+// TODO: rewrite drawing to be only IL edits so no copy paste vanilla code
 public partial class BiomeLavaMod : Mod
 {
     public static BiomeLavaMod Instance => ModContent.GetInstance<BiomeLavaMod>();
 
-    private static bool Active => LavaStyleLoader.Instance.IsStyleActive;
-    private static ModLavaStyle Style => LavaStyleLoader.Instance.ActiveStyle;
-    private static IEnumerable<ModLavaStyle> Styles => LavaStyleLoader.Instance.ActiveStyles;
-
-    private static List<float> LavaAlpha
-    {
-        get => LavaStyleLoader.Instance.LavaAlpha;
-        set => LavaStyleLoader.Instance.LavaAlpha = value;
-    }
+    private static bool Active;
+    private static ModLavaStyle Style;
+    private static IEnumerable<ModLavaStyle> Styles;
+    private static float Alpha;
+    private static List<float> Alphas;
 
     private static List<float> _alphaCache;
 
@@ -99,14 +97,13 @@ public partial class BiomeLavaMod : Mod
     {
         if (Active && waterfallType == WaterStyleID.Lava)
         {
-            // TODO: lavaLiquidAlpha
             foreach (var style in Styles)
             {
                 Main.spriteBatch.Draw(
                     style.LavaFallTexture.Value,
                     position,
                     sourceRect,
-                    color * LavaAlpha[style.Type],
+                    color * Alphas[style.Type],
                     0f,
                     default,
                     1f,
@@ -149,7 +146,7 @@ public partial class BiomeLavaMod : Mod
     private static Color SetLavaFallColor(On_WaterfallManager.orig_StylizeColor orig, float alpha, int maxSteps, int waterfallType, int y, int s, Tile tileCache, Color aColor)
     {
         if (Active && Style.LavaFallUsesGlowMask)
-            aColor = Color.White; // Change the color from the lighting color to solid white
+            aColor = Color.Lerp(aColor, Color.White, Alpha); // Change the color from the lighting color to solid white
 
         return orig.Invoke(alpha, maxSteps, waterfallType, y, s, tileCache, aColor);
     }
@@ -591,7 +588,7 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchStloc2()
         );
 
-        c.EmitDelegate<Action>(static () => _alphaCache = LavaAlpha.ToList());
+        c.EmitDelegate<Action>(static () => _alphaCache = Alphas.ToList());
 
         c.GotoNext(
             MoveType.Before,
@@ -671,7 +668,7 @@ public partial class BiomeLavaMod : Mod
             static i => i.MatchStsfld<Main>("liquidAlpha")
         );
 
-        c.EmitDelegate<Action>(static () => LavaAlpha = _alphaCache.ToList());
+        c.EmitDelegate<Action>(static () => Alphas = _alphaCache.ToList());
     }
 
     private static void AddTileLiquidDrawing(ILContext il)
@@ -701,17 +698,7 @@ public partial class BiomeLavaMod : Mod
         c.EmitDelegate(static (Vector2 unscaledPosition, Vector2 vector, int j, int i, Tile tile) => DrawTile_LiquidBehindTile(false, false, unscaledPosition, vector, j, i, tile));
     }
 
-    private static void BlockLavaDrawingForSlopes(
-        On_TileDrawing.orig_DrawTile_LiquidBehindTile orig,
-        TileDrawing self,
-        bool solidLayer,
-        bool inFrontOfPlayers,
-        int waterStyleOverride,
-        Vector2 screenPosition,
-        Vector2 screenOffset,
-        int tileX,
-        int tileY,
-        Tile tileCache)
+    private static void BlockLavaDrawingForSlopes(On_TileDrawing.orig_DrawTile_LiquidBehindTile orig, TileDrawing self, bool solidLayer, bool inFrontOfPlayers, int waterStyleOverride, Vector2 screenPosition, Vector2 screenOffset, int tileX, int tileY, Tile tileCache)
     {
         var tile = Main.tile[tileX + 1, tileY];
         var tile2 = Main.tile[tileX - 1, tileY];
@@ -759,6 +746,25 @@ public partial class BiomeLavaMod : Mod
 
     #region Lava Drawing
 
+    private static void UpdateLava()
+    {
+        // Updating variables
+        Active = LavaStyleLoader.Instance.IsStyleActive;
+        Style = LavaStyleLoader.Instance.ActiveStyle;
+        Styles = LavaStyleLoader.Instance.ActiveStyles;
+        Alpha = LavaStyleLoader.Instance.LavaAlpha.First();
+        Alphas = LavaStyleLoader.Instance.LavaAlpha;
+
+        // Changing alphas
+        for (int i = 0; i < LavaStyleLoader.Instance.LavaStyleCount; i++)
+        {
+            if (!LavaStyleLoader.Instance.LavaStyles[i].InZone())
+                Alphas[i] = Math.Max(Alphas[i] - 0.2f, 0f);
+            else
+                Alphas[i] = Math.Min(Alphas[i] + 0.2f, 1f);
+        }
+    }
+
     private static void DrawLavas(bool isBackground = false)
     {
         if (!Active)
@@ -766,36 +772,8 @@ public partial class BiomeLavaMod : Mod
 
         Main.drewLava = false;
 
-        if (!isBackground) // ReSharper disable once RemoveRedundantBraces
-        {
-            for (int i = 0; i < LavaStyleLoader.Instance.LavaStyleCount; i++)
-            {
-                if (!LavaStyleLoader.Instance.LavaStyles[i].InZone())
-                    LavaAlpha[i] = Math.Max(LavaAlpha[i] - 0.2f, 0f);
-                else
-                    LavaAlpha[i] = Math.Min(LavaAlpha[i] + 0.2f, 1f);
-            }
-            /*
-            Main.NewText("Active: " + Active);
-            Main.NewText("Type: " + Style.Type);
-
-            string text = "Alphas: ";
-            foreach (float alpha in LavaAlpha)
-            {
-                text += alpha + ", ";
-            }
-
-            Main.NewText(text);
-
-            string text2 = "Active Styles: ";
-            foreach (var style in Styles)
-            {
-                text2 += style.Type + ", ";
-            }
-
-            Main.NewText(text2);
-            //*/
-        }
+        if (!isBackground)
+            UpdateLava();
 
         if (!Active)
             return;
@@ -1519,7 +1497,7 @@ public partial class BiomeLavaMod : Mod
         if (flag6)
             for (int i = 0; i < 7 /*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; i++)
             {
-                if (LavaAlpha[i] > 0f && i != num2)
+                if (Alphas[i] > 0f && i != num2)
                 {
                     DrawPartialLiquid(!solidLayer, tileCache, ref position, ref liquidSize, i, ref vertices);
                     flag7 = true;
@@ -1528,7 +1506,7 @@ public partial class BiomeLavaMod : Mod
             }
 
         var colors = vertices;
-        float num7 = flag7 ? LavaAlpha[num2] : 1f;
+        float num7 = flag7 ? Alphas[num2] : 1f;
         ref var bottomLeftColor2 = ref colors.BottomLeftColor;
         bottomLeftColor2 *= num7;
         ref var bottomRightColor2 = ref colors.BottomRightColor;
