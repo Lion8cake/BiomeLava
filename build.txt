@@ -1,5 +1,3 @@
 displayName = Biome Colored Lava
 author = Lion8cake
-homepage = https://github.com/Lion8cake/BiomeLava
-version = 1.0.0
-side = Both
+version = 0.1
