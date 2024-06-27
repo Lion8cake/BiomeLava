@@ -27,16 +27,13 @@ using Terraria.Graphics.Shaders;
 using Terraria.ModLoader.Default.Patreon;
 using static Terraria.Graphics.Capture.IL_CaptureBiome.Sets;
 using static Terraria.WaterfallManager;
+using BiomeLava.ModLoader;
 
 namespace BiomeLava
 {
 	public class BiomeLava : Mod
 	{
-		//(Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, int Zone), *overload1* Vector3 lightColor), *overload2* bool WaterfallGlowmask), *overload3* int BuffID, bool keepOnFire)
-
 		public static int lavaStyle;
-
-		public static int MAX_LAVA_STYLES = 8; //1-8, will probs go unused
 
 		public static float[] lavaLiquidAlpha = new float[7];
 
@@ -56,10 +53,14 @@ namespace BiomeLava
 
 		public bool[] lavafallGlowmask = new bool[7];
 
-		public int TotalLavaStyleCount;
+		public static BiomeLava instance;
 
 		public override void Load()
 		{
+			instance = this;
+
+			LoaderManager.Get<LavaStylesLoader>().ResizeArrays();
+
 			IL_LiquidRenderer.DrawNormalLiquids += BlockLavaDrawing;
 			IL_Main.DoDraw += IL_Main_DoDraw;
 			IL_Main.RenderWater += IL_Main_RenderWater;
@@ -89,6 +90,10 @@ namespace BiomeLava
 
 		public override void Unload()
 		{
+			instance = null;
+
+			LoaderManager.Get<LavaStylesLoader>().Unload();
+
 			IL_LiquidRenderer.DrawNormalLiquids -= BlockLavaDrawing;
 			IL_Main.DoDraw -= IL_Main_DoDraw;
 			IL_Main.RenderWater -= IL_Main_RenderWater;
@@ -216,10 +221,14 @@ namespace BiomeLava
 		{
 			if (waterfallType == 1)
 			{
+				float r = lavaLightColor[lavaStyle].X;
+				float g = lavaLightColor[lavaStyle].Y;
+				float b = lavaLightColor[lavaStyle].Z;
+				LavaStylesLoader.ModifyLight(x, y, lavaStyle, ref r, ref g, ref b);
 				float r8;
-				float num3 = (r8 = (lavaLightColor[lavaStyle].X + (float)(270 - Main.mouseTextColor) / 900f) * 0.4f);
-				float g8 = num3 * lavaLightColor[lavaStyle].Y;
-				float b8 = num3 * lavaLightColor[lavaStyle].Z; 
+				float num3 = (r8 = (r + (float)(270 - Main.mouseTextColor) / 900f) * 0.4f);
+				float g8 = num3 * g;
+				float b8 = num3 * b;
 				Lighting.AddLight(x, y, r8, g8, b8);
 				return;
 			}
@@ -352,13 +361,22 @@ namespace BiomeLava
 				float num = lavaLightColor[lavaStyle].X;
 				float num2 = lavaLightColor[lavaStyle].Y;
 				float num3 = lavaLightColor[lavaStyle].Z;
-				for (int j = 0; j < LavaStyleID.Count; j++)
+				LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref num, ref num2, ref num3);
+				for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; j++)
 				{
 					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 					{
-						num = Single.Lerp(lavaLightColor[j].X, lavaLightColor[lavaStyle].X, lavaLiquidAlpha[lavaStyle]);
-						num2 = Single.Lerp(lavaLightColor[j].Y, lavaLightColor[lavaStyle].Y, lavaLiquidAlpha[lavaStyle]);
-						num3 = Single.Lerp(lavaLightColor[j].Z, lavaLightColor[lavaStyle].Z, lavaLiquidAlpha[lavaStyle]);
+						float r = lavaLightColor[j].X;
+						float g = lavaLightColor[j].Y;
+						float b = lavaLightColor[j].Z;
+						LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), j, ref r, ref g, ref b);
+						float r2 = lavaLightColor[lavaStyle].X;
+						float g2 = lavaLightColor[lavaStyle].Y;
+						float b2 = lavaLightColor[lavaStyle].Z;
+						LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref r2, ref g2, ref b2);
+						num = Single.Lerp(r, r2, lavaLiquidAlpha[lavaStyle]);
+						num2 = Single.Lerp(g, g2, lavaLiquidAlpha[lavaStyle]);
+						num3 = Single.Lerp(b, b2, lavaLiquidAlpha[lavaStyle]);
 					}
 				}
 				float colorManipulator = (float)(270 - Main.mouseTextColor) / 900f;
@@ -480,32 +498,23 @@ namespace BiomeLava
 		#endregion
 
 		#region ModCalls
+		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, bool Zone), *overload1* Vector3 lightColor), *overload2* bool WaterfallGlowmask), *overload3* int BuffID, bool keepOnFire)
+
 		public override object Call(params object[] args)
 		{
-			if (args[0] is not string str)
-				throw new ArgumentException("args[0] is not a string!");
-
-			str = str.ToLower();
-
-			if (str == "ModLavaStyle" && args.Length <= 8)
-				ModLavaStyle.LavaStyle(args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-			if (str == "ModLavaStyle" && args.Length == 9)
-				ModLavaStyle.LavaStyle(args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-			if (str == "ModLavaStyle" && args.Length == 10)
-				ModLavaStyle.LavaStyle(args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
-			if (str == "ModLavaStyle" && args.Length == 12)
-				ModLavaStyle.LavaStyle(args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11]);
-			return null;
+			return args switch
+			{
+				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, new Vector3(0.55f, 0.33f, 0.11f)),
+				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive, Vector3 lightColor] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, lightColor),
+				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive, Vector3 lightColor, bool fallMask] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, lightColor, fallMask),
+				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive, Vector3 lightColor, bool fallMask, int BuffID, bool OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, lightColor, fallMask, BuffID, OnFire),
+				_ => throw new Exception("BiomeLava: Unknown mod call, make sure you have the correct amount of parameters and those parameters are the correct object!")
+			};
 		}
 		#endregion
 
 		public static int CalculateLavaStyle()
 		{
-			/*ModLavaStyle.ChooseStyle(out var waterStyle, out var zone);
-			if (zone)
-			{
-				return waterStyle;
-			}*/
 			if (Main.bgStyle == 1)
 			{
 				return 1; //corrupt lava
@@ -536,10 +545,13 @@ namespace BiomeLava
 		#region LavaDrawing
 		private void DrawLavas(bool isBackground = false)
 		{
+			Main.NewText(lavaStyle);
 			Main.drewLava = false;
 			if (!isBackground)
 			{
 				lavaStyle = CalculateLavaStyle();
+				LavaStylesLoader.IsLavaActive();
+				lavaStyle = ModContent.GetInstance<ExampleMod.ExampleLavaStyle2>().Slot;
 				for (int i = 0; i < LavaStyleID.Count; i++)
 				{
 					if (lavaStyle != i)
@@ -551,7 +563,7 @@ namespace BiomeLava
 						lavaLiquidAlpha[i] = Math.Min(lavaLiquidAlpha[i] + 0.2f, 1f);
 					}
 				}
-				LoaderManager.Get<WaterStylesLoader>().UpdateLiquidAlphas();
+				LoaderManager.Get<LavaStylesLoader>().UpdateLiquidAlphas();
 			}
 			/*if (!Main.drawToScreen && !isBackground) //already called through DrawWaters
 			{
@@ -568,10 +580,7 @@ namespace BiomeLava
 				//LiquidRenderer.Instance.PrepareDraw(drawArea); //already called
 			}*/
 			bool flag = false;
-			for (int j = 0; j < 
-				LavaStyleID.Count
-				//LoaderManager.Get<WaterStylesLoader>().TotalCount
-				; j++)
+			for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; j++)
 			{
 				if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 				{
@@ -1228,7 +1237,7 @@ namespace BiomeLava
 			bool flag7 = false;
 			if (flag6)
 			{
-				for (int i = 0; i < LavaStyleID.Count/*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; i++)
+				for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; i++)
 				{
 					if (lavaLiquidAlpha[i] > 0f && i != num2)
 					{
@@ -1284,7 +1293,7 @@ namespace BiomeLava
 
 		public void InitialDrawLavafall(WaterfallManager waterfallManager)
 		{
-			for (int i = 0; i < LavaStyleID.Count; i++)
+			for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; i++)
 			{
 				if (lavaLiquidAlpha[i] > 0f)
 				{
