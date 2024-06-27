@@ -24,6 +24,9 @@ using System.Runtime.InteropServices;
 using static log4net.Appender.ColoredConsoleAppender;
 using BiomeLava.Droplets;
 using Terraria.Graphics.Shaders;
+using Terraria.ModLoader.Default.Patreon;
+using static Terraria.Graphics.Capture.IL_CaptureBiome.Sets;
+using static Terraria.WaterfallManager;
 
 namespace BiomeLava
 {
@@ -57,7 +60,7 @@ namespace BiomeLava
 
 		public override void Load()
 		{
-			//IL_LiquidRenderer.DrawNormalLiquids += BlockLavaDrawing;
+			IL_LiquidRenderer.DrawNormalLiquids += BlockLavaDrawing;
 			IL_Main.DoDraw += IL_Main_DoDraw;
 			IL_Main.RenderWater += IL_Main_RenderWater;
 			IL_Main.RenderBackground += IL_Main_RenderBackground;
@@ -70,7 +73,8 @@ namespace BiomeLava
 			On_TileLightScanner.ApplyLiquidLight += LavaLightEditor;
 
 			On_WaterfallManager.AddLight += LavafallLightEditor;
-			On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects += LavafallRedrawer;
+			On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects += LavafallRemover;
+			On_WaterfallManager.Draw += LavaFallRedrawer;
 			On_WaterfallManager.StylizeColor += WaterfallGlowmaskEditor;
 
 			IL_Main.oldDrawWater += BlockRetroLightingLava;
@@ -81,13 +85,11 @@ namespace BiomeLava
 			IL_Item.MoveInWorld += SplashItemLava;
 
 			IL_TileDrawing.EmitLiquidDrops += LavaDropletReplacer;
-
-			ModLavaStyle.moddedLavaStyles = new List<int>();
 		}
 
 		public override void Unload()
 		{
-			//IL_LiquidRenderer.DrawNormalLiquids -= BlockLavaDrawing;
+			IL_LiquidRenderer.DrawNormalLiquids -= BlockLavaDrawing;
 			IL_Main.DoDraw -= IL_Main_DoDraw;
 			IL_Main.RenderWater -= IL_Main_RenderWater;
 			IL_Main.RenderBackground -= IL_Main_RenderBackground;
@@ -100,7 +102,8 @@ namespace BiomeLava
 			On_TileLightScanner.ApplyLiquidLight -= LavaLightEditor;
 
 			On_WaterfallManager.AddLight -= LavafallLightEditor;
-			On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects -= LavafallRedrawer;
+			On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects -= LavafallRemover;
+			On_WaterfallManager.Draw -= LavaFallRedrawer;
 			On_WaterfallManager.StylizeColor -= WaterfallGlowmaskEditor;
 
 			IL_Main.oldDrawWater -= BlockRetroLightingLava;
@@ -111,78 +114,88 @@ namespace BiomeLava
 			IL_Item.MoveInWorld -= SplashItemLava;
 
 			IL_TileDrawing.EmitLiquidDrops -= LavaDropletReplacer;
-
-			ModLavaStyle.moddedLavaStyles = null;
 		}
 
 		public override void PostSetupContent()
 		{
-			//TotalLavaStyleCount = 7 + ModContent.GetInstance<ModLavaStyle>().moddedLavaStyles.Count;
 			if (!Main.dedServ)
 			{
-				lavaTextures[0] = Main.Assets.Request<Texture2D>("Images/Misc/water_" + 1);
-				lavaTextures[1] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava");
-				lavaTextures[2] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava");
-				lavaTextures[3] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava");
-				lavaTextures[4] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava");
-				lavaTextures[5] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava");
-				lavaTextures[6] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava");
-
-				lavaSlopeTexture[0] = TextureAssets.LiquidSlope[1];
-				lavaSlopeTexture[1] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Slope");
-				lavaSlopeTexture[2] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Slope");
-				lavaSlopeTexture[3] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Slope");
-				lavaSlopeTexture[4] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Slope");
-				lavaSlopeTexture[5] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Slope");
-				lavaSlopeTexture[6] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Slope");
-
-				lavaBlockTexture[0] = TextureAssets.Liquid[1];
-				lavaBlockTexture[1] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Block");
-				lavaBlockTexture[2] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Block");
-				lavaBlockTexture[3] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Block");
-				lavaBlockTexture[4] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Block");
-				lavaBlockTexture[5] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Block");
-				lavaBlockTexture[6] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Block");
-
-				lavaBubbleDust[0] = DustID.Lava;
-				lavaBubbleDust[1] = ModContent.DustType<CorruptionLavaDust>();
-				lavaBubbleDust[2] = ModContent.DustType<CrimsonLavaDust>();
-				lavaBubbleDust[3] = ModContent.DustType<HallowLavaDust>();
-				lavaBubbleDust[4] = ModContent.DustType<JungleLavaDust>();
-				lavaBubbleDust[5] = ModContent.DustType<IceLavaDust>();
-				lavaBubbleDust[6] = ModContent.DustType<DesertLavaDust>();
-
-				lavaLightColor[0] = new Vector3(0.55f, 0.33f, 0.11f);
-				lavaLightColor[1] = new Vector3(0.33f, 0.55f, 0.11f);
-				lavaLightColor[2] = new Vector3(0.55f, 0.44f, 0.11f);
-				lavaLightColor[3] = new Vector3(0.33f, 0.77f, 0.99f);
-				lavaLightColor[4] = new Vector3(0.22f, 0.22f, 0.11f);
-				lavaLightColor[5] = new Vector3(0.44f, 0.22f, 0.11f);
-				lavaLightColor[6] = new Vector3(0.77f, 0.44f, 0.11f);
-
-				lavaWaterfallTexture[0] = Main.instance.waterfallManager.waterfallTexture[1];
-				lavaWaterfallTexture[1] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Waterfall");
-				lavaWaterfallTexture[2] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Waterfall");
-				lavaWaterfallTexture[3] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Waterfall");
-				lavaWaterfallTexture[4] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Waterfall");
-				lavaWaterfallTexture[5] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Waterfall");
-				lavaWaterfallTexture[6] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Waterfall");
-
-				lavaDripGore[0] = GoreID.LavaDrip;
-				lavaDripGore[1] = ModContent.GoreType<CorruptionDroplet>();
-				lavaDripGore[2] = ModContent.GoreType<CrimsonDroplet>();
-				lavaDripGore[3] = ModContent.GoreType<HallowDroplet>();
-				lavaDripGore[4] = ModContent.GoreType<JungleDroplet>();
-				lavaDripGore[5] = ModContent.GoreType<IceDroplet>();
-				lavaDripGore[6] = ModContent.GoreType<IceDroplet>();
-
-				lavafallGlowmask[0] = true;
-				lavafallGlowmask[1] = true;
-				lavafallGlowmask[2] = true;
-				lavafallGlowmask[3] = true;
-				lavafallGlowmask[4] = false;
-				lavafallGlowmask[5] = false;
-				lavafallGlowmask[6] = true;
+				for (int i = 0; i < LavaStyleID.Count; i++)
+				{
+					switch(i)
+					{
+						case LavaStyleID.Purity:
+							lavaTextures[i] = Instance._liquidTextures[WaterStyleID.Lava];
+							lavaSlopeTexture[i] = TextureAssets.LiquidSlope[WaterStyleID.Lava];
+							lavaBlockTexture[i] = TextureAssets.Liquid[WaterStyleID.Lava];
+							lavaBubbleDust[i] = DustID.Lava;
+							lavaDripGore[i] = GoreID.LavaDrip;
+							lavaLightColor[i] = new Vector3(0.55f, 0.33f, 0.11f);
+							lavaWaterfallTexture[i] = Main.instance.waterfallManager.waterfallTexture[WaterfallID.Lava];
+							lavafallGlowmask[i] = true;
+							break;
+						case LavaStyleID.Corrupt:
+							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava");
+							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Slope");
+							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Block");
+							lavaBubbleDust[i] = ModContent.DustType<CorruptionLavaDust>();
+							lavaDripGore[i] = ModContent.GoreType<CorruptionDroplet>();
+							lavaLightColor[i] = new Vector3(0.33f, 0.55f, 0.11f);
+							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Waterfall");
+							lavafallGlowmask[i] = true;
+							break;
+						case LavaStyleID.Crimson:
+							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava");
+							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Slope");
+							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Block");
+							lavaBubbleDust[i] = ModContent.DustType<CrimsonLavaDust>();
+							lavaDripGore[i] = ModContent.GoreType<CrimsonDroplet>();
+							lavaLightColor[i] = new Vector3(0.55f, 0.44f, 0.11f);
+							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Waterfall");
+							lavafallGlowmask[i] = true;
+							break;
+						case LavaStyleID.Hallow:
+							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava");
+							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Slope");
+							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Block");
+							lavaBubbleDust[i] = ModContent.DustType<HallowLavaDust>();
+							lavaDripGore[i] = ModContent.GoreType<HallowDroplet>();
+							lavaLightColor[i] = new Vector3(0.33f, 0.77f, 0.99f);
+							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Waterfall");
+							lavafallGlowmask[i] = true;
+							break;
+						case LavaStyleID.Jungle:
+							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava");
+							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Slope");
+							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Block");
+							lavaBubbleDust[i] = ModContent.DustType<JungleLavaDust>();
+							lavaDripGore[i] = ModContent.GoreType<JungleDroplet>();
+							lavaLightColor[i] = new Vector3(0.22f, 0.22f, 0.11f);
+							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Waterfall");
+							lavafallGlowmask[i] = false;
+							break;
+						case LavaStyleID.Snow:
+							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava");
+							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Slope");
+							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Block");
+							lavaBubbleDust[i] = ModContent.DustType<IceLavaDust>();
+							lavaDripGore[i] = ModContent.GoreType<IceDroplet>();
+							lavaLightColor[i] = new Vector3(0.44f, 0.22f, 0.11f);
+							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Waterfall");
+							lavafallGlowmask[i] = false;
+							break;
+						case LavaStyleID.Desert:
+							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava");
+							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Slope");
+							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Block");
+							lavaBubbleDust[i] = ModContent.DustType<DesertLavaDust>();
+							lavaDripGore[i] = ModContent.GoreType<IceDroplet>();
+							lavaLightColor[i] = new Vector3(0.77f, 0.44f, 0.11f);
+							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Waterfall");
+							lavafallGlowmask[i] = true;
+							break;
+					}
+				}
 			}
 		}
 
@@ -199,13 +212,6 @@ namespace BiomeLava
 			}
 		}
 
-		private void LavaDropletReplacer(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.After, i => i.MatchLdarg(out _), i => i.MatchLdcI4(374), i => i.MatchBneUn(out _), i => i.MatchLdcI4(716));
-			c.EmitDelegate<Func<int, int>>(type => lavaDripGore[lavaStyle]);
-		}
-
 		private void LavafallLightEditor(On_WaterfallManager.orig_AddLight orig, int waterfallType, int x, int y)
 		{
 			if (waterfallType == 1)
@@ -220,23 +226,26 @@ namespace BiomeLava
 			orig.Invoke(waterfallType, x, y);
 		}
 
-		private void LavafallRedrawer(On_WaterfallManager.orig_DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects orig, WaterfallManager self, int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
+		private void LavaFallRedrawer(On_WaterfallManager.orig_Draw orig, WaterfallManager self, SpriteBatch spriteBatch)
+		{
+			orig.Invoke(self, spriteBatch);
+			InitialDrawLavafall(self);
+		}
+
+		private void LavafallRemover(On_WaterfallManager.orig_DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects orig, WaterfallManager self, int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
 		{
 			if (waterfallType == 1)
 			{
-				Color colors = color;
-				for (int j = 0; j < 7; j++)
-				{
-					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
-					{
-						colors.A = (byte)(lavaLiquidAlpha[j] * 255);
-						Main.spriteBatch.Draw(lavaWaterfallTexture[j].Value, position, (Rectangle?)sourceRect, colors, 0f, default(Vector2), 1f, effects, 0f);
-					}
-				}
-				Main.spriteBatch.Draw(lavaWaterfallTexture[lavaStyle].Value, position, (Rectangle?)sourceRect, colors, 0f, default(Vector2), 1f, effects, 0f);
 				return;
 			}
 			orig.Invoke(self, waterfallType, x, y, opacity, position, sourceRect, color, effects);
+		}
+
+		private void LavaDropletReplacer(ILContext il)
+		{
+			ILCursor c = new ILCursor(il);
+			c.GotoNext(MoveType.After, i => i.MatchLdarg(out _), i => i.MatchLdcI4(374), i => i.MatchBneUn(out _), i => i.MatchLdcI4(716));
+			c.EmitDelegate<Func<int, int>>(type => lavaDripGore[lavaStyle]);
 		}
 
 		private void SplashItemLava(ILContext il)
@@ -334,12 +343,24 @@ namespace BiomeLava
 
 		private void LavaLightEditor(On_TileLightScanner.orig_ApplyLiquidLight orig, TileLightScanner self, Tile tile, ref Vector3 lightColor)
 		{
-			orig.Invoke(self, tile, ref lightColor);
+			if (tile.LiquidAmount <= 0)
+			{
+				return;
+			}
 			if (tile.LiquidType == LiquidID.Lava)
 			{
 				float num = lavaLightColor[lavaStyle].X;
 				float num2 = lavaLightColor[lavaStyle].Y;
 				float num3 = lavaLightColor[lavaStyle].Z;
+				for (int j = 0; j < LavaStyleID.Count; j++)
+				{
+					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
+					{
+						num = Single.Lerp(lavaLightColor[j].X, lavaLightColor[lavaStyle].X, lavaLiquidAlpha[lavaStyle]);
+						num2 = Single.Lerp(lavaLightColor[j].Y, lavaLightColor[lavaStyle].Y, lavaLiquidAlpha[lavaStyle]);
+						num3 = Single.Lerp(lavaLightColor[j].Z, lavaLightColor[lavaStyle].Z, lavaLiquidAlpha[lavaStyle]);
+					}
+				}
 				float colorManipulator = (float)(270 - Main.mouseTextColor) / 900f;
 				num += colorManipulator;
 				num2 += colorManipulator;
@@ -356,7 +377,9 @@ namespace BiomeLava
 				{
 					lightColor.Z = num3;
 				}
+				return;
 			}
+			orig.Invoke(self, tile, ref lightColor);
 		}
 
 		private void LavaBubbleReplacer(ILContext il)
@@ -376,7 +399,7 @@ namespace BiomeLava
 			Tile tile4 = Main.tile[tileX, tileY + 1];
 			if (tileCache.LiquidType == LiquidID.Lava || tile.LiquidType == LiquidID.Lava || tile2.LiquidType == LiquidID.Lava || tile3.LiquidType == LiquidID.Lava || tile4.LiquidType == LiquidID.Lava)
 			{
-				return;
+				return; //not quite, theres a loop for the lava slope ID, will have to IL edit iirc
 			}
 			orig.Invoke(self, solidLayer, inFrontOfPlayers, waterStyleOverride, screenPosition, screenOffset, tileX, tileY, tileCache);
 		}
@@ -412,16 +435,16 @@ namespace BiomeLava
 		private void BlockLavaDrawing(ILContext il)
 		{
 			ILCursor c = new ILCursor(il);
-			ILLabel l = c.DefineLabel();
+			ILLabel IL_0000 = c.DefineLabel();
 			c.GotoNext(MoveType.After, i => i.MatchLdloc2(), i => i.MatchLdfld<LiquidRenderer.LiquidDrawCache>("Type"), i => i.MatchStloc(8));
 			c.EmitLdloc3();
 			c.EmitLdloc(4);
 			c.EmitDelegate((int i, int j) => {
 				return Main.tile[i, j].LiquidType == 1;
 			});
-			c.EmitBrtrue(l);
-			c.GotoNext(MoveType.Before, i => i.MatchLdloc(4), i => i.MatchLdcI4(1), i => i.MatchAdd(), i => i.MatchStloc(4));
-			l.Target = c.Next;
+			c.EmitBrtrue(IL_0000);
+			c.GotoNext(MoveType.Before, i => i.MatchLdloc(2), i => i.MatchSizeof(typeof(LiquidRenderer).GetNestedType("LiquidDrawCache", BindingFlags.NonPublic)), i => i.MatchAdd(), i => i.MatchStloc(2));
+			c.MarkLabel(IL_0000);
 		}
 
 		private void IL_Main_DoDraw(ILContext il)
@@ -517,7 +540,7 @@ namespace BiomeLava
 			if (!isBackground)
 			{
 				lavaStyle = CalculateLavaStyle();
-				for (int i = 0; i < 7; i++)
+				for (int i = 0; i < LavaStyleID.Count; i++)
 				{
 					if (lavaStyle != i)
 					{
@@ -528,8 +551,9 @@ namespace BiomeLava
 						lavaLiquidAlpha[i] = Math.Min(lavaLiquidAlpha[i] + 0.2f, 1f);
 					}
 				}
+				LoaderManager.Get<WaterStylesLoader>().UpdateLiquidAlphas();
 			}
-			if (!Main.drawToScreen && !isBackground)
+			/*if (!Main.drawToScreen && !isBackground) //already called through DrawWaters
 			{
 				Vector2 vector = (Vector2)(Main.drawToScreen ? Vector2.Zero : new Vector2((float)Main.offScreenRange, (float)Main.offScreenRange));
 				int val = (int)((Main.Camera.ScaledPosition.X - vector.X) / 16f - 1f);
@@ -541,11 +565,13 @@ namespace BiomeLava
 				val2 = Math.Min(val2, Main.maxTilesX - 5) + 2;
 				val4 = Math.Min(val4, Main.maxTilesY - 5) + 4;
 				Rectangle drawArea = new(val, val3, val2 - val, val4 - val3);
-				//LiquidRenderer.Instance.PrepareDraw(drawArea);
-			}
-			Main.NewText(ModLavaStyle.moddedLavaStyles.Count);
+				//LiquidRenderer.Instance.PrepareDraw(drawArea); //already called
+			}*/
 			bool flag = false;
-			for (int j = 0; j < 7/*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; j++)
+			for (int j = 0; j < 
+				LavaStyleID.Count
+				//LoaderManager.Get<WaterStylesLoader>().TotalCount
+				; j++)
 			{
 				if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 				{
@@ -560,7 +586,7 @@ namespace BiomeLava
 		{
 			if (!Lighting.NotRetro)
 			{
-				oldDrawWater(bg, lavaStyle, Alpha);
+				oldDrawLava(bg, lavaStyle, Alpha);
 				return;
 			}
 			Stopwatch stopwatch = new Stopwatch();
@@ -580,18 +606,18 @@ namespace BiomeLava
 		public unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, int LavaStyle, float globalAlpha, bool isBackgroundDraw)
 		{
 			Main.tileBatch.End();
-			Rectangle drawArea = LiquidRenderer.Instance._drawArea;
+			Rectangle drawArea = Instance._drawArea;
 			Main.tileBatch.Begin();
-			fixed (LiquidDrawCache* ptr3 = &LiquidRenderer.Instance._drawCache[0])
+			fixed (LiquidDrawCache* ptr3 = &Instance._drawCache[0])
 			{
 				LiquidDrawCache* ptr2 = ptr3;
 				for (int i = drawArea.X; i < drawArea.X + drawArea.Width; i++)
 				{
 					for (int j = drawArea.Y; j < drawArea.Y + drawArea.Height; j++)
 					{
-
-						if (ptr2->IsVisible && ptr2->Type == 1)
+						if (ptr2->IsVisible && ptr2->Type == LiquidID.Lava)
 						{
+							float newAlpha = globalAlpha / 2;
 							Rectangle sourceRectangle = ptr2->SourceRectangle;
 							if (ptr2->IsSurfaceLiquid)
 							{
@@ -599,11 +625,13 @@ namespace BiomeLava
 							}
 							else
 							{
-								sourceRectangle.Y += LiquidRenderer.Instance._animationFrame * 80;
+								sourceRectangle.Y += Instance._animationFrame * 80;
 							}
 							Vector2 liquidOffset = ptr2->LiquidOffset;
-							float num = globalAlpha;
+							float num = ptr2->Opacity * (isBackgroundDraw ? 1f : DEFAULT_OPACITY[ptr2->Type]);
 							int num2 = LavaStyle;
+							num *= globalAlpha;
+							num = Math.Min(1f, num);
 							Lighting.GetCornerColors(i, j, out var vertices);
 							ref Color bottomLeftColor = ref vertices.BottomLeftColor;
 							bottomLeftColor *= num;
@@ -614,7 +642,7 @@ namespace BiomeLava
 							ref Color topRightColor = ref vertices.TopRightColor;
 							topRightColor *= num;
 							Main.DrawTileInWater(drawOffset, i, j);
-							Main.tileBatch.Draw(lavaTextures[lavaStyle].Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle, vertices, Vector2.Zero, 1f, (SpriteEffects)0);
+							Main.tileBatch.Draw(lavaTextures[num2].Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle, vertices, Vector2.Zero, 1f, (SpriteEffects)0);
 						}
 						ptr2++;
 					}
@@ -623,7 +651,7 @@ namespace BiomeLava
 			Main.tileBatch.End();
 		}
 
-		public void oldDrawWater(bool bg = false, int Style = 0, float Alpha = 1f)
+		public void oldDrawLava(bool bg = false, int Style = 0, float Alpha = 1f)
 		{
 			float num = 0f;
 			float num12 = 99999f;
@@ -673,13 +701,14 @@ namespace BiomeLava
 					Color color = Lighting.GetColor(j, i);
 					float num3 = 256 - Main.tile[j, i].LiquidAmount;
 					num3 /= 32f;
+					bool flag = false;
 					int num4 = 0;
 					if (Main.tile[j, i].LiquidType == LiquidID.Lava)
 					{
-						if (Main.drewLava)
+						/*if (Main.drewLava) //disallows the back liquid to not draw until its alpha hits 1f apparently
 						{
 							continue;
-						}
+						}*/
 						float num5 = Math.Abs((float)(j * 16 + 8) - (Main.screenPosition.X + (float)(Main.screenWidth / 2)));
 						float num6 = Math.Abs((float)(i * 16 + 8) - (Main.screenPosition.Y + (float)(Main.screenHeight / 2)));
 						if (num5 < (float)(Main.screenWidth * 2) && num6 < (float)(Main.screenHeight * 2))
@@ -715,11 +744,8 @@ namespace BiomeLava
 					{
 						num9 = 1f;
 					}
-					if (num4 != 1 && num4 != 11)
-					{
-						num9 *= Alpha;
-					}
-					Main.DrawTileInWater(-Main.screenPosition + vector, j, i);
+					num9 *= Alpha;
+					Main.DrawTileInWater(-Main.screenPosition + vector, j, i); //lily pads
 					vector2 = new((float)(j * 16), (float)(i * 16 + (int)num3 * 2));
 					value = new(0, 0, 16, 16 - (int)num3 * 2);
 					bool flag2 = true;
@@ -815,7 +841,7 @@ namespace BiomeLava
 						if (Main.rand.Next(20000) < num13)
 						{
 							newColor = new(255, 255, 255);
-							int num14 = Dust.NewDust(new Vector2((float)(j * 16), vector2.Y - 2f), 16, 8, 43, 0f, 0f, 254, newColor, 0.75f);
+							int num14 = Dust.NewDust(new Vector2((float)(j * 16), vector2.Y - 2f), 16, 8, DustID.TintableDustLighted, 0f, 0f, 254, newColor, 0.75f);
 							Dust obj = Main.dust[num14];
 							obj.velocity *= 0f;
 						}
@@ -829,18 +855,18 @@ namespace BiomeLava
 						}
 						if (Main.instance.IsActive && !Main.gamePaused && Dust.lavaBubbles < 200)
 						{
-							if (Main.tile[j, i].LiquidAmount > 200 && Main.rand.Next(700) == 0)
+							if (Main.tile[j, i].LiquidAmount > 200 && Main.rand.NextBool(700))
 							{
-								Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16)), 16, 16, 35);
+								Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16)), 16, 16, lavaBubbleDust[num4]);
 							}
-							if (value.Y == 0 && Main.rand.Next(350) == 0)
+							if (value.Y == 0 && Main.rand.NextBool(350))
 							{
-								int num15 = Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f), 16, 8, lavaBubbleDust[Style], 0f, 0f, 50, default(Color), 1.5f);
+								int num15 = Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f), 16, 8, lavaBubbleDust[num4], 0f, 0f, 50, default(Color), 1.5f);
 								Dust obj2 = Main.dust[num15];
 								obj2.velocity *= 0.8f;
 								Main.dust[num15].velocity.X *= 2f;
 								Main.dust[num15].velocity.Y -= (float)Main.rand.Next(1, 7) * 0.1f;
-								if (Main.rand.Next(10) == 0)
+								if (Main.rand.NextBool(10))
 								{
 									Main.dust[num15].velocity.Y *= Main.rand.Next(2, 5);
 								}
@@ -853,10 +879,14 @@ namespace BiomeLava
 					float num18 = (float)(int)color.B * num9;
 					float num19 = (float)(int)color.A * num9;
 					color = new((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
+					if (flag)
+					{
+						color = new(color.ToVector4() * LiquidRenderer.GetShimmerBaseColor(j, i));
+					}
 					if (Lighting.NotRetro && !bg)
 					{
 						Color color2 = color;
-						if (num4 != 1 && ((double)(int)color2.R > (double)num29 * 0.6 || (double)(int)color2.G > (double)num29 * 0.65 || (double)(int)color2.B > (double)num29 * 0.7))
+						if (((double)(int)color2.R > (double)num29 * 0.6 || (double)(int)color2.G > (double)num29 * 0.65 || (double)(int)color2.B > (double)num29 * 0.7))
 						{
 							for (int l = 0; l < 4; l++)
 							{
@@ -901,10 +931,14 @@ namespace BiomeLava
 								num18 = (float)(int)color4.B * num9;
 								num19 = (float)(int)color4.A * num9;
 								color4 = new((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
-								color3.R = (byte)(color2.R * 3 + (color4.R * 2) / 5);
-								color3.G = (byte)(color2.G * 3 + (color4.G * 2) / 5);
-								color3.B = (byte)(color2.B * 3 + (color4.B * 2) / 5);
-								color3.A = (byte)(color2.A * 3 + (color4.A * 2) / 5);
+								color3.R = (byte)((color2.R * 3 + color4.R * 2) / 5);
+								color3.G = (byte)((color2.G * 3 + color4.G * 2) / 5);
+								color3.B = (byte)((color2.B * 3 + color4.B * 2) / 5);
+								color3.A = (byte)((color2.A * 3 + color4.A * 2) / 5);
+								if (flag)
+								{
+									color3 = new(color3.ToVector4() * LiquidRenderer.GetShimmerBaseColor(j, i));
+								}
 								Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + new Vector2((float)num20, (float)num21) + vector, (Rectangle?)new Rectangle(value.X + num20, value.Y + num21, width, height), color3, 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
 							}
 						}
@@ -960,7 +994,7 @@ namespace BiomeLava
 			Main.drewLava = true;
 		}
 
-		public void DrawLiquidBehindTiles(int waterStyleOverride = -1)
+		public void DrawLiquidBehindTiles(int lavaStyleOverride = -1)
 		{
 			Vector2 unscaledPosition = Main.Camera.UnscaledPosition;
 			Vector2 vector = new((float)Main.offScreenRange, (float)Main.offScreenRange);
@@ -976,7 +1010,7 @@ namespace BiomeLava
 					Tile tile = Main.tile[j, i];
 					if (tile != null)
 					{
-						DrawTile_LiquidBehindTile(solidLayer: false, inFrontOfPlayers: false, waterStyleOverride, unscaledPosition, vector, j, i, tile);
+						DrawTile_LiquidBehindTile(solidLayer: false, inFrontOfPlayers: false, lavaStyleOverride, unscaledPosition, vector, j, i, tile);
 					}
 				}
 			}
@@ -1194,7 +1228,7 @@ namespace BiomeLava
 			bool flag7 = false;
 			if (flag6)
 			{
-				for (int i = 0; i < 7/*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; i++)
+				for (int i = 0; i < LavaStyleID.Count/*LoaderManager.Get<WaterStylesLoader>().TotalCount*/; i++)
 				{
 					if (lavaLiquidAlpha[i] > 0f && i != num2)
 					{
@@ -1246,6 +1280,432 @@ namespace BiomeLava
 					Main.tileBatch.Draw(lavaSlopeTexture[liquidType].Value, position, liquidSize, colors, Vector2.Zero, 1f, (SpriteEffects)0);
 					break;
 			}
+		}
+
+		public void InitialDrawLavafall(WaterfallManager waterfallManager)
+		{
+			for (int i = 0; i < LavaStyleID.Count; i++)
+			{
+				if (lavaLiquidAlpha[i] > 0f)
+				{
+					DrawLavafall(waterfallManager, i, lavaLiquidAlpha[i]);
+				}
+			}
+		}
+
+		internal void DrawLavafall(WaterfallManager waterfallManager, int Style = 0, float Alpha = 1f)
+		{
+			int waterfallDist = (int)typeof(WaterfallManager).GetField("waterfallDist", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public | BindingFlags.Instance).GetValue(waterfallManager);
+			int rainFrameForeground = (int)typeof(WaterfallManager).GetField("rainFrameForeground", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public | BindingFlags.Instance).GetValue(waterfallManager);
+			int rainFrameBackground = (int)typeof(WaterfallManager).GetField("rainFrameBackground", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public | BindingFlags.Instance).GetValue(waterfallManager);
+			int snowFrameForeground = (int)typeof(WaterfallManager).GetField("snowFrameForeground", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public | BindingFlags.Instance).GetValue(waterfallManager);
+			WaterfallData[] waterfalls = (WaterfallData[])typeof(WaterfallManager).GetField("waterfalls", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public | BindingFlags.Instance).GetValue(waterfallManager);
+			int currentMax = (int)typeof(WaterfallManager).GetField("currentMax", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public | BindingFlags.Instance).GetValue(waterfallManager);
+			int slowFrame = (int)typeof(WaterfallManager).GetField("slowFrame", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public | BindingFlags.Instance).GetValue(waterfallManager);
+			Main.tileSolid[546] = false;
+			float num = 0f;
+			float num12 = 99999f;
+			float num23 = 99999f;
+			int num34 = -1;
+			int num45 = -1;
+			float num47 = 0f;
+			float num48 = 99999f;
+			float num49 = 99999f;
+			int num50 = -1;
+			int num2 = -1;
+			Rectangle value = default(Rectangle);
+			Rectangle value2 = default(Rectangle);
+			Vector2 origin = default(Vector2);
+			for (int i = 0; i < currentMax; i++)
+			{
+				if (waterfalls[i].type != 1)
+				{
+					continue;
+				}
+				int num3 = 0;
+				int num4 = Style;
+				int num5 = waterfalls[i].x;
+				int num6 = waterfalls[i].y;
+				int num7 = 0;
+				int num8 = 0;
+				int num9 = 0;
+				int num10 = 0;
+				int num11 = 0;
+				int num13 = 0;
+				int num14;
+				int num15;
+				if (waterfalls[i].stopAtStep == 0)
+				{
+					continue;
+				}
+				num14 = 32 * slowFrame;
+				int num22 = 0;
+				num15 = waterfallDist;
+				Color color4 = Color.White;
+				for (int k = 0; k < num15; k++)
+				{
+					if (num22 >= 2)
+					{
+						break;
+					}
+					typeof(WaterfallManager).GetMethod("AddLight", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).Invoke(null, new object[] { 1, num5, num6 });
+					Tile tile3 = Main.tile[num5, num6];
+					if (tile3.HasUnactuatedTile && Main.tileSolid[tile3.TileType] && !Main.tileSolidTop[tile3.TileType] && !TileID.Sets.Platforms[tile3.TileType] && tile3.BlockType == 0)
+					{
+						break;
+					}
+					Tile tile4 = Main.tile[num5 - 1, num6];
+					Tile tile5 = Main.tile[num5, num6 + 1];
+					Tile tile6 = Main.tile[num5 + 1, num6];
+					if (WorldGen.SolidTile(tile5) && !tile3.IsHalfBlock)
+					{
+						num3 = 8;
+					}
+					else if (num8 != 0)
+					{
+						num3 = 0;
+					}
+					int num24 = 0;
+					int num25 = num10;
+					int num26 = 0;
+					int num27 = 0;
+					bool flag2 = false;
+					if (tile5.TopSlope && !tile3.IsHalfBlock && tile5.TileType != 19)
+					{
+						flag2 = true;
+						if (tile5.Slope == (SlopeType)1)
+						{
+							num24 = 1;
+							num26 = 1;
+							num9 = 1;
+							num10 = num9;
+						}
+						else
+						{
+							num24 = -1;
+							num26 = -1;
+							num9 = -1;
+							num10 = num9;
+						}
+						num27 = 1;
+					}
+					else if ((!WorldGen.SolidTile(tile5) && !tile5.BottomSlope && !tile3.IsHalfBlock) || (!tile5.HasTile && !tile3.IsHalfBlock))
+					{
+						num22 = 0;
+						num27 = 1;
+						num26 = 0;
+					}
+					else if ((WorldGen.SolidTile(tile4) || tile4.TopSlope || tile4.LiquidAmount > 0) && !WorldGen.SolidTile(tile6) && tile6.LiquidAmount == 0)
+					{
+						if (num9 == -1)
+						{
+							num22++;
+						}
+						num26 = 1;
+						num27 = 0;
+						num9 = 1;
+					}
+					else if ((WorldGen.SolidTile(tile6) || tile6.TopSlope || tile6.LiquidAmount > 0) && !WorldGen.SolidTile(tile4) && tile4.LiquidAmount == 0)
+					{
+						if (num9 == 1)
+						{
+							num22++;
+						}
+						num26 = -1;
+						num27 = 0;
+						num9 = -1;
+					}
+					else if (((!WorldGen.SolidTile(tile6) && !tile3.TopSlope) || tile6.LiquidAmount == 0) && !WorldGen.SolidTile(tile4) && !tile3.TopSlope && tile4.LiquidAmount == 0)
+					{
+						num27 = 0;
+						num26 = num9;
+					}
+					else
+					{
+						num22++;
+						num27 = 0;
+						num26 = 0;
+					}
+					if (num22 >= 2)
+					{
+						num9 *= -1;
+						num26 *= -1;
+					}
+					Color color5 = Lighting.GetColor(num5, num6);
+					if (k > 50)
+					{
+						typeof(WaterfallManager).GetMethod("TrySparkling", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).Invoke(null, new object[] { num5, num6, num9, color5 });
+					}
+					float alpha = GetLavafallAlpha(Alpha, num15, num6, k, tile3);
+					color5 = (Color)typeof(WaterfallManager).GetMethod("StylizeColor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static).Invoke(null, new object[] { alpha, num15, 1, num6, k, tile3, color5 });
+					float num33 = Math.Abs((float)(num5 * 16 + 8) - (Main.screenPosition.X + (float)(Main.screenWidth / 2)));
+					float num35 = Math.Abs((float)(num6 * 16 + 8) - (Main.screenPosition.Y + (float)(Main.screenHeight / 2)));
+					if (num33 < (float)(Main.screenWidth * 2) && num35 < (float)(Main.screenHeight * 2))
+					{
+						float num36 = (float)Math.Sqrt(num33 * num33 + num35 * num35);
+						float num37 = 1f - num36 / ((float)Main.screenWidth * 0.75f);
+						if (num37 > 0f)
+						{
+							num += num37;
+						}
+					}
+					if (num33 < num12)
+					{
+						num12 = num33;
+						num34 = num5 * 16 + 8;
+					}
+					if (num35 < num23)
+					{
+						num23 = num33;
+						num45 = num6 * 16 + 8;
+					}
+					int num38 = tile3.LiquidAmount / 16;
+					if (flag2 && num9 != num25)
+					{
+						int num39 = 2;
+						if (num25 == 1)
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16 + 16 - num39)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38 - num39), color5, (SpriteEffects)1);
+						}
+						else
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + 16 - num39)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38 - num39), color5, (SpriteEffects)0);
+						}
+					}
+					if (num7 == 0 && num24 != 0 && num8 == 1 && num9 != num10)
+					{
+						num24 = 0;
+						num9 = num10;
+						color5 = Color.White;
+						if (num9 == 1)
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16 + 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color5, (SpriteEffects)1);
+						}
+						else
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16 + 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color5, (SpriteEffects)1);
+						}
+					}
+					if (num11 != 0 && num26 == 0 && num27 == 1)
+					{
+						if (num9 == 1)
+						{
+							if (num13 != num4)
+							{
+								DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3 + 8)) - Main.screenPosition, new Rectangle(num14, 0, 16, 16 - num38 - 8), color4, (SpriteEffects)1);
+							}
+							else
+							{
+								DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3 + 8)) - Main.screenPosition, new Rectangle(num14, 0, 16, 16 - num38 - 8), color5, (SpriteEffects)1);
+							}
+						}
+						else
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3 + 8)) - Main.screenPosition, new Rectangle(num14, 0, 16, 16 - num38 - 8), color5, (SpriteEffects)0);
+						}
+					}
+					if (num3 == 8 && num8 == 1 && num11 == 0)
+					{
+						if (num10 == -1)
+						{
+							if (num13 != num4)
+							{
+								DrawLavafall(num13, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 8), color4, (SpriteEffects)0);
+							}
+							else
+							{
+								DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 8), color5, (SpriteEffects)0);
+							}
+						}
+						else if (num13 != num4)
+						{
+							DrawLavafall(num13, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 8), color4, (SpriteEffects)1);
+						}
+						else
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 8), color5, (SpriteEffects)1);
+						}
+					}
+					if (num24 != 0 && num7 == 0)
+					{
+						if (num25 == 1)
+						{
+							if (num13 != num4)
+							{
+								DrawLavafall(num13, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color4, (SpriteEffects)1);
+							}
+							else
+							{
+								DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color5, (SpriteEffects)1);
+							}
+						}
+						else if (num13 != num4)
+						{
+							DrawLavafall(num13, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color4, (SpriteEffects)0);
+						}
+						else
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color5, (SpriteEffects)0);
+						}
+					}
+					if (num27 == 1 && num24 == 0 && num11 == 0)
+					{
+						if (num9 == -1)
+						{
+							if (num8 == 0)
+							{
+								DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3)) - Main.screenPosition, new Rectangle(num14, 0, 16, 16 - num38), color5, (SpriteEffects)0);
+							}
+							else if (num13 != num4)
+							{
+								DrawLavafall(num13, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color4, (SpriteEffects)0);
+							}
+							else
+							{
+								DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color5, (SpriteEffects)0);
+							}
+						}
+						else if (num8 == 0)
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3)) - Main.screenPosition, new Rectangle(num14, 0, 16, 16 - num38), color5, (SpriteEffects)1);
+						}
+						else if (num13 != num4)
+						{
+							DrawLavafall(num13, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color4, (SpriteEffects)1);
+						}
+						else
+						{
+							DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 - 16), (float)(num6 * 16)) - Main.screenPosition, new Rectangle(num14, 24, 32, 16 - num38), color5, (SpriteEffects)1);
+						}
+					}
+					else
+					{
+						switch (num26)
+						{
+							case 1:
+								if (Main.tile[num5, num6].LiquidAmount > 0 && !Main.tile[num5, num6].IsHalfBlock)
+								{
+									break;
+								}
+								if (num24 == 1)
+								{
+									for (int m = 0; m < 8; m++)
+									{
+										int num43 = m * 2;
+										int num44 = 14 - m * 2;
+										int num46 = num43;
+										num3 = 8;
+										if (num7 == 0 && m < 2)
+										{
+											num46 = 4;
+										}
+										DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 + num43), (float)(num6 * 16 + num3 + num46)) - Main.screenPosition, new Rectangle(16 + num14 + num44, 0, 2, 16 - num3), color5, (SpriteEffects)1);
+									}
+								}
+								else
+								{
+									int height2 = 16;
+									if (TileID.Sets.BlocksWaterDrawingBehindSelf[Main.tile[num5, num6].TileType])
+									{
+										height2 = 8;
+									}
+									else if (TileID.Sets.BlocksWaterDrawingBehindSelf[Main.tile[num5, num6 + 1].TileType])
+									{
+										height2 = 8;
+									}
+									DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3)) - Main.screenPosition, new Rectangle(16 + num14, 0, 16, height2), color5, (SpriteEffects)1);
+								}
+								break;
+							case -1:
+								if (Main.tile[num5, num6].LiquidAmount > 0 && !Main.tile[num5, num6].IsHalfBlock)
+								{
+									break;
+								}
+								if (num24 == -1)
+								{
+									for (int l = 0; l < 8; l++)
+									{
+										int num40 = l * 2;
+										int num41 = l * 2;
+										int num42 = 14 - l * 2;
+										num3 = 8;
+										if (num7 == 0 && l > 5)
+										{
+											num42 = 4;
+										}
+										DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16 + num40), (float)(num6 * 16 + num3 + num42)) - Main.screenPosition, new Rectangle(16 + num14 + num41, 0, 2, 16 - num3), color5, (SpriteEffects)1);
+									}
+								}
+								else
+								{
+									int height = 16;
+									if (TileID.Sets.BlocksWaterDrawingBehindSelf[Main.tile[num5, num6].TileType])
+									{
+										height = 8;
+									}
+									else if (TileID.Sets.BlocksWaterDrawingBehindSelf[Main.tile[num5, num6 + 1].TileType])
+									{
+										height = 8;
+									}
+									DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3)) - Main.screenPosition, new Rectangle(16 + num14, 0, 16, height), color5, (SpriteEffects)0);
+								}
+								break;
+							case 0:
+								if (num27 == 0)
+								{
+									if (Main.tile[num5, num6].LiquidAmount <= 0 || Main.tile[num5, num6].IsHalfBlock)
+									{
+										DrawLavafall(num4, num5, num6, alpha, new Vector2((float)(num5 * 16), (float)(num6 * 16 + num3)) - Main.screenPosition, new Rectangle(16 + num14, 0, 16, 16), color5, (SpriteEffects)0);
+									}
+									k = 1000;
+								}
+								break;
+						}
+					}
+					if (tile3.LiquidAmount > 0 && !tile3.IsHalfBlock)
+					{
+						k = 1000;
+					}
+					num8 = num27;
+					num10 = num9;
+					num7 = num26;
+					num5 += num26;
+					num6 += num27;
+					num11 = num24;
+					color4 = color5;
+					if (num13 != num4)
+					{
+						num13 = num4;
+					}
+					if ((tile4.HasTile && (tile4.TileType == 189 || tile4.TileType == 196)) || (tile6.HasTile && (tile6.TileType == 189 || tile6.TileType == 196)) || (tile5.HasTile && (tile5.TileType == 189 || tile5.TileType == 196)))
+					{
+						num15 = (int)(40f * ((float)Main.maxTilesX / 4200f) * Main.gfxQuality);
+					}
+				}
+			}
+			Main.ambientWaterfallX = num34;
+			Main.ambientWaterfallY = num45;
+			Main.ambientWaterfallStrength = num;
+			Main.ambientLavafallX = num50;
+			Main.ambientLavafallY = num2;
+			Main.ambientLavafallStrength = num47;
+			Main.tileSolid[546] = true;
+		}
+
+		private void DrawLavafall(int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
+		{
+			Texture2D value = lavaWaterfallTexture[waterfallType].Value;
+			Main.spriteBatch.Draw(value, position, (Rectangle?)sourceRect, color, 0f, default(Vector2), 1f, effects, 0f);
+		}
+
+		private static float GetLavafallAlpha(float Alpha, int maxSteps, int y, int s, Tile tileCache)
+		{
+			float num = (tileCache.WallType != 0 || !((double)y < Main.worldSurface)) ? (1f * Alpha) : Alpha;
+			if (s > maxSteps - 10)
+			{
+				num *= (float)(maxSteps - s) / 10f;
+			}
+			return num;
 		}
 		#endregion
 	}
