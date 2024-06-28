@@ -358,7 +358,7 @@ namespace BiomeLava
 				float num2 = lavaLightColor[lavaStyle].Y;
 				float num3 = lavaLightColor[lavaStyle].Z;
 				LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref num, ref num2, ref num3);
-				for (int j = 0; j < ModContent.GetInstance<LavaStylesLoader>().TotalCount; j++)
+				for (int j = 0; j < LavaStylesLoader.TotalCount; j++)
 				{
 					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 					{
@@ -547,7 +547,7 @@ namespace BiomeLava
 			{
 				lavaStyle = CalculateLavaStyle();
 				LavaStylesLoader.IsLavaActive();
-				lavaStyle = ModContent.GetInstance<ExampleMod.ExampleLavaStyle>().Slot;
+				//lavaStyle = ModContent.GetInstance<ExampleMod.ExampleLavaStyle>().Slot;
 				for (int i = 0; i < LavaStyleID.Count; i++)
 				{
 					if (lavaStyle != i)
@@ -559,7 +559,7 @@ namespace BiomeLava
 						lavaLiquidAlpha[i] = Math.Min(lavaLiquidAlpha[i] + 0.2f, 1f);
 					}
 				}
-				ModContent.GetInstance<LavaStylesLoader>().UpdateLiquidAlphas();
+				LavaStylesLoader.UpdateLiquidAlphas();
 			}
 			/*if (!Main.drawToScreen && !isBackground) //already called through DrawWaters
 			{
@@ -576,7 +576,7 @@ namespace BiomeLava
 				//LiquidRenderer.Instance.PrepareDraw(drawArea); //already called
 			}*/
 			bool flag = false;
-			for (int j = 0; j < ModContent.GetInstance<LavaStylesLoader>().TotalCount; j++)
+			for (int j = 0; j < LavaStylesLoader.TotalCount; j++)
 			{
 				if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 				{
@@ -1233,7 +1233,7 @@ namespace BiomeLava
 			bool flag7 = false;
 			if (flag6)
 			{
-				for (int i = 0; i < ModContent.GetInstance<LavaStylesLoader>().TotalCount; i++)
+				for (int i = 0; i < LavaStylesLoader.TotalCount; i++)
 				{
 					if (lavaLiquidAlpha[i] > 0f && i != num2)
 					{
@@ -1289,7 +1289,7 @@ namespace BiomeLava
 
 		public void InitialDrawLavafall(WaterfallManager waterfallManager)
 		{
-			for (int i = 0; i < ModContent.GetInstance<LavaStylesLoader>().TotalCount; i++)
+			for (int i = 0; i < LavaStylesLoader.TotalCount; i++)
 			{
 				if (lavaLiquidAlpha[i] > 0f)
 				{

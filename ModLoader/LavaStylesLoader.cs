@@ -25,7 +25,7 @@ namespace BiomeLava.ModLoader
 		private static void ResizeArrays(ResizeArray_orig orig, bool unloading)
 		{
 			orig.Invoke(unloading);
-			int totalCount = ModContent.GetInstance<LavaStylesLoader>().TotalCount;
+			int totalCount = TotalCount;
 			Array.Resize(ref BiomeLava.instance.lavaBlockTexture, totalCount);
 			Array.Resize(ref BiomeLava.instance.lavaSlopeTexture, totalCount);
 			Array.Resize(ref BiomeLava.instance.lavaTextures, totalCount);
@@ -38,15 +38,15 @@ namespace BiomeLava.ModLoader
 			Array.Resize(ref BiomeLava.instance.lavafallGlowmask, totalCount);
 		}
 
-		private readonly List<ModLavaStyle> _content = [];
+		private static readonly List<ModLavaStyle> _content = [];
 
-		public IReadOnlyList<ModLavaStyle> Content => _content;
+		public static IReadOnlyList<ModLavaStyle> Content => _content;
 
-		public int VanillaCount => LavaStyleID.Count;
+		public static int VanillaCount => LavaStyleID.Count;
 
-		public int ModCount => _content.Count;
+		public static int ModCount => _content.Count;
 
-		public int TotalCount => VanillaCount + ModCount;
+		public static int TotalCount => VanillaCount + ModCount;
 
 		public override void Load()
 		{
@@ -73,13 +73,13 @@ namespace BiomeLava.ModLoader
 			}
 		}
 
-		public ModLavaStyle Get(int type)
+		public static ModLavaStyle Get(int type)
 		{
 			type -= VanillaCount;
 			return type >= 0 && type < _content.Count ? _content[type] : null;
 		}
 
-		internal int Register(ModLavaStyle instance)
+		internal static int Register(ModLavaStyle instance)
 		{
 			int type = TotalCount;
 			ModTypeLookup<ModLavaStyle>.Register(instance);
@@ -89,7 +89,7 @@ namespace BiomeLava.ModLoader
 
 		private delegate void ResizeArray_orig(bool unloading);
 
-		public void UpdateLiquidAlphas()
+		public static void UpdateLiquidAlphas()
 		{
 			if (BiomeLava.lavaStyle >= VanillaCount)
 			{
@@ -126,7 +126,7 @@ namespace BiomeLava.ModLoader
 
 		public static void ModifyLight(int i, int j, int type, ref float r, ref float g, ref float b)
 		{
-			ModLavaStyle lavaStyle = ModContent.GetInstance<LavaStylesLoader>().Get(type);
+			ModLavaStyle lavaStyle = Get(type);
 			if (lavaStyle != null)
 			{
 				lavaStyle?.ModifyLight(i, j, ref r, ref g, ref b);
@@ -135,10 +135,10 @@ namespace BiomeLava.ModLoader
 
 		public static void IsLavaActive()
 		{
-			foreach (ModLavaStyle item in ModContent.GetInstance<LavaStylesLoader>().Content)
+			foreach (ModLavaStyle item in Content)
 			{
 				int type = item.Slot;
-				ModLavaStyle lavaStyle = ModContent.GetInstance<LavaStylesLoader>().Get(type);
+				ModLavaStyle lavaStyle = Get(type);
 				if (lavaStyle != null)
 				{
 					bool? flag = lavaStyle?.IsLavaActive();

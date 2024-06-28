@@ -30,7 +30,7 @@ namespace BiomeLava.ModLoader
 
 		protected sealed override void Register()
 		{
-			Slot = LoaderManager.Get<LavaStylesLoader>().Register(this);
+			Slot = LavaStylesLoader.Register(this);
 		}
 
 		public sealed override void SetupContent()
