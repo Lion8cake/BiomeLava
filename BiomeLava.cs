@@ -90,8 +90,6 @@ namespace BiomeLava
 		{
 			instance = null;
 
-			LoaderManager.Get<LavaStylesLoader>().Unload();
-
 			IL_LiquidRenderer.DrawNormalLiquids -= BlockLavaDrawing;
 			IL_Main.DoDraw -= IL_Main_DoDraw;
 			IL_Main.RenderWater -= IL_Main_RenderWater;
@@ -360,7 +358,7 @@ namespace BiomeLava
 				float num2 = lavaLightColor[lavaStyle].Y;
 				float num3 = lavaLightColor[lavaStyle].Z;
 				LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref num, ref num2, ref num3);
-				for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalCount; j++)
+				for (int j = 0; j < ModContent.GetInstance<LavaStylesLoader>().TotalCount; j++)
 				{
 					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 					{
@@ -549,7 +547,7 @@ namespace BiomeLava
 			{
 				lavaStyle = CalculateLavaStyle();
 				LavaStylesLoader.IsLavaActive();
-				lavaStyle = ModContent.GetInstance<ExampleMod.ExampleLavaStyle2>().Slot;
+				lavaStyle = ModContent.GetInstance<ExampleMod.ExampleLavaStyle>().Slot;
 				for (int i = 0; i < LavaStyleID.Count; i++)
 				{
 					if (lavaStyle != i)
@@ -561,7 +559,7 @@ namespace BiomeLava
 						lavaLiquidAlpha[i] = Math.Min(lavaLiquidAlpha[i] + 0.2f, 1f);
 					}
 				}
-				LoaderManager.Get<LavaStylesLoader>().UpdateLiquidAlphas();
+				ModContent.GetInstance<LavaStylesLoader>().UpdateLiquidAlphas();
 			}
 			/*if (!Main.drawToScreen && !isBackground) //already called through DrawWaters
 			{
@@ -578,7 +576,7 @@ namespace BiomeLava
 				//LiquidRenderer.Instance.PrepareDraw(drawArea); //already called
 			}*/
 			bool flag = false;
-			for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalCount; j++)
+			for (int j = 0; j < ModContent.GetInstance<LavaStylesLoader>().TotalCount; j++)
 			{
 				if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 				{
@@ -1235,7 +1233,7 @@ namespace BiomeLava
 			bool flag7 = false;
 			if (flag6)
 			{
-				for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalCount; i++)
+				for (int i = 0; i < ModContent.GetInstance<LavaStylesLoader>().TotalCount; i++)
 				{
 					if (lavaLiquidAlpha[i] > 0f && i != num2)
 					{
@@ -1291,7 +1289,7 @@ namespace BiomeLava
 
 		public void InitialDrawLavafall(WaterfallManager waterfallManager)
 		{
-			for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalCount; i++)
+			for (int i = 0; i < ModContent.GetInstance<LavaStylesLoader>().TotalCount; i++)
 			{
 				if (lavaLiquidAlpha[i] > 0f)
 				{

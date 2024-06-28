@@ -58,7 +58,7 @@ namespace BiomeLava.ModLoader
 
 		public override void PostSetupContent()
 		{
-			foreach (ModLavaStyle item in ModContent.GetInstance<LavaStylesLoader>().Content)
+			foreach (ModLavaStyle item in Content)
 			{
 				int Slot = item.Slot;
 				BiomeLava.instance.lavaTextures[Slot] = ModContent.Request<Texture2D>(item.Texture, (AssetRequestMode)2);
@@ -102,7 +102,7 @@ namespace BiomeLava.ModLoader
 					}
 				}
 			}
-			foreach (ModLavaStyle item in ModContent.GetInstance<LavaStylesLoader>().Content)
+			foreach (ModLavaStyle item in Content)
 			{
 				int type = item.Slot;
 				if (BiomeLava.lavaStyle == type)
@@ -126,7 +126,7 @@ namespace BiomeLava.ModLoader
 
 		public static void ModifyLight(int i, int j, int type, ref float r, ref float g, ref float b)
 		{
-			ModLavaStyle lavaStyle = LoaderManager.Get<LavaStylesLoader>().Get(type);
+			ModLavaStyle lavaStyle = ModContent.GetInstance<LavaStylesLoader>().Get(type);
 			if (lavaStyle != null)
 			{
 				lavaStyle?.ModifyLight(i, j, ref r, ref g, ref b);
@@ -138,7 +138,7 @@ namespace BiomeLava.ModLoader
 			foreach (ModLavaStyle item in ModContent.GetInstance<LavaStylesLoader>().Content)
 			{
 				int type = item.Slot;
-				ModLavaStyle lavaStyle = LoaderManager.Get<LavaStylesLoader>().Get(type);
+				ModLavaStyle lavaStyle = ModContent.GetInstance<LavaStylesLoader>().Get(type);
 				if (lavaStyle != null)
 				{
 					bool? flag = lavaStyle?.IsLavaActive();
