@@ -1,15 +1,12 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using Terraria.GameContent.Liquid;
-using Terraria.GameContent;
-using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using System.Collections.Generic;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Reflection;
 using ReLogic.Content;
+using Terraria.Localization;
 
 namespace BiomeLava.ModLoader
 {
@@ -65,11 +62,15 @@ namespace BiomeLava.ModLoader
 				BiomeLava.instance.lavaBlockTexture[Slot] = ModContent.Request<Texture2D>(item.BlockTexture, (AssetRequestMode)2);
 				BiomeLava.instance.lavaSlopeTexture[Slot] = ModContent.Request<Texture2D>(item.SlopeTexture, (AssetRequestMode)2);
 				BiomeLava.instance.lavaWaterfallTexture[Slot] = ModContent.Request<Texture2D>(item.WaterfallTexture, (AssetRequestMode)2);
-				BiomeLava.instance.lavaLightColor[Slot] = Vector3.Zero;
 
 				BiomeLava.instance.lavaBubbleDust[Slot] = item.GetSplashDust();
 				BiomeLava.instance.lavaDripGore[Slot] = item.GetDropletGore();
 				BiomeLava.instance.lavafallGlowmask[Slot] = item.LavafallGlowmask();
+
+				if (item.LavaLightCall != null)
+					BiomeLava.instance.lavaLightColor[Slot] = (Vector3)item.LavaLightCall;
+				else
+					BiomeLava.instance.lavaLightColor[Slot] = Vector3.Zero;
 			}
 		}
 
@@ -150,12 +151,41 @@ namespace BiomeLava.ModLoader
 			}
 		}
 
-		//unimplemented
-		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, bool Zone), *overload1* Vector3 lightColor), *overload2* bool WaterfallGlowmask), *overload3* int BuffID, bool keepOnFire)
-		public static object ModCalledLava(Mod mod, string lavaStyleName, Texture2D texture, Texture2D blockTexture, Texture2D slopeTexture, Texture2D waterfallTexture, int DustID, int GoreID, bool IsActive, Vector3 lightcolor, bool waterfallGlowmask = true, int buffID = BuffID.OnFire, bool keepOnFire = false)
+		//Mod calls
+		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, Vector3 lightColor, bool Zone), *overload1* bool WaterfallGlowmask), *overload2* int BuffID, bool keepOnFire)
+		public static object ModCalledLava(Mod mod, string lavaStyleName, string texture, string blockTexture, string slopeTexture, string waterfallTexture, int DustID, int GoreID, Vector3? lightcolor, bool IsActive, bool waterfallGlowmask = true, int buffID = BuffID.OnFire, bool keepOnFire = false)
 		{
-			//turn the parameters into a new ModLavaStyle
-			return true;
+			if (mod == null)
+			{
+				throw new ArgumentNullException("mod");
+			}
+			if (lavaStyleName == null)
+			{
+				throw new ArgumentNullException("name");
+			}
+			if (texture == null || blockTexture == null || slopeTexture == null || waterfallTexture == null)
+			{
+				throw new ArgumentNullException("texture");
+			}
+			if (!mod.loading)
+			{
+				throw new Exception(Language.GetTextValue("tModLoader.LoadErrorNotLoading"));
+			}
+			return mod.AddContent(new ModCallModLavaStyle
+			{
+				NameCall = lavaStyleName,
+				TextureCall = texture,
+				BlockTextureCall = blockTexture,
+				SlopeTextureCall = slopeTexture,
+				WaterfallTextureCall = waterfallTexture,
+				dustCall = DustID,
+				goreCall = GoreID,
+				IsActiveCall = IsActive,
+				LavaLightCall = lightcolor,
+				LavafallGlowmaskCall = waterfallGlowmask,
+				buffCall = buffID,
+				InflictsOnFireCall = keepOnFire,
+			});
 		}
 	}
 }

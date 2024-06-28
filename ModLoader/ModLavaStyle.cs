@@ -22,11 +22,15 @@ namespace BiomeLava.ModLoader
 		/// </summary>
 		public int Slot { get; private set; } = -1;
 
-		public virtual string BlockTexture => Texture + "_Block";
+		public override string Name => NameCall ?? base.Name;
 
-		public virtual string SlopeTexture => Texture + "_Slope";
+		public override string Texture => TextureCall ?? base.Texture;
 
-		public virtual string WaterfallTexture => Texture + "_Waterfall";
+		public virtual string BlockTexture => BlockTextureCall ?? Texture + "_Block";
+
+		public virtual string SlopeTexture => SlopeTextureCall ?? Texture + "_Slope";
+
+		public virtual string WaterfallTexture => WaterfallTextureCall ?? Texture + "_Waterfall";
 
 		protected sealed override void Register()
 		{
@@ -59,43 +63,59 @@ namespace BiomeLava.ModLoader
 		/// <summary>
 		/// The ID of the dust that is created when anything splashes in lava.
 		/// </summary>
-		public abstract int GetSplashDust();
+		public virtual int GetSplashDust() => NameCall != null ? dustCall : DustID.Lava;
 
 		/// <summary>
 		/// The ID of the gore that represents droplets of lava falling down from a block. Return <see cref="F:Terraria.ID.GoreID.LavaDrip" /> (or another existing droplet gore).
 		/// </summary>
-		public abstract int GetDropletGore();
+		public virtual int GetDropletGore() => NameCall != null ? goreCall : GoreID.LavaDrip;
 
 		/// <summary>
 		/// Return true if the player is in the correct zone to activate the lava.
 		/// </summary>
 		/// <returns></returns>
-		public abstract bool IsLavaActive();
+		public virtual bool IsLavaActive() => NameCall != null ? IsActiveCall : false;
 
 		/// <summary>
 		/// Return false if the waterfall made by the lavastyle should have a glowmask
 		/// </summary>
 		/// <returns></returns>
-		public virtual bool LavafallGlowmask()
-		{
-			return true; 
-		}
+		public virtual bool LavafallGlowmask() => NameCall != null ? LavafallGlowmaskCall : true; 
 
 		/// <summary>
 		/// Return false if the lava style shouldnt inflict OnFire when an entity enters the lava
 		/// </summary>
 		/// <returns></returns>
-		public virtual bool InflictsOnFire()
-		{
-			return true; 
-		}
+		public virtual bool InflictsOnFire() => NameCall != null ? InflictsOnFireCall : true; 
 
 		/// <summary>
 		/// The ID of the buff that is given to both the player and NPCs when they enter the lava.
 		/// </summary>
-		public virtual int GetFlameDebuff()
-		{
-			return BuffID.OnFire;
-		}
+		public virtual int GetFlameDebuff() => NameCall != null ? buffCall : BuffID.OnFire;
+
+		//Modcall stuff
+		internal string NameCall;
+
+		internal string TextureCall;
+
+		internal string BlockTextureCall;
+
+		internal string SlopeTextureCall;
+
+		internal string WaterfallTextureCall;
+
+		internal int dustCall;
+
+		internal int goreCall;
+
+		internal bool IsActiveCall;
+
+		internal Vector3? LavaLightCall;
+
+		internal bool LavafallGlowmaskCall;
+
+		internal int buffCall;
+
+		internal bool InflictsOnFireCall;
 	}
 }

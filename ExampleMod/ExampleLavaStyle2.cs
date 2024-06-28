@@ -25,7 +25,7 @@ namespace BiomeLava.ExampleMod
 
 		public override bool IsLavaActive()
 		{
-			return Main.waterStyle == 0;
+			return Main.LocalPlayer.ZoneUnderworldHeight;
 		}
 
 		public override void ModifyLight(int i, int j, ref float r, ref float g, ref float b)

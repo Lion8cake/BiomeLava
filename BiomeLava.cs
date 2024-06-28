@@ -494,16 +494,15 @@ namespace BiomeLava
 		#endregion
 
 		#region ModCalls
-		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, bool Zone), *overload1* Vector3 lightColor), *overload2* bool WaterfallGlowmask), *overload3* int BuffID, bool keepOnFire)
+		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, Vector3 lightColor, bool Zone), *overload1* bool WaterfallGlowmask), *overload2* int BuffID, bool keepOnFire)
 
 		public override object Call(params object[] args)
 		{
 			return args switch
 			{
-				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, new Vector3(0.55f, 0.33f, 0.11f)),
-				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive, Vector3 lightColor] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, lightColor),
-				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive, Vector3 lightColor, bool fallMask] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, lightColor, fallMask),
-				["ModLavaStyle", Mod mod, string lavaName, Texture2D texture, Texture2D block, Texture2D slope, Texture2D waterfall, int DustID, int GoreID, bool IsActive, Vector3 lightColor, bool fallMask, int BuffID, bool OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, IsActive, lightColor, fallMask, BuffID, OnFire),
+				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, int DustID, int GoreID, Vector3 lightColor, bool IsActive] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive),
+				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, int DustID, int GoreID, Vector3 lightColor, bool IsActive, bool fallMask] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask),
+				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, int DustID, int GoreID, Vector3 lightColor, bool IsActive, bool fallMask, int BuffID, bool OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, BuffID, OnFire),
 				_ => throw new Exception("BiomeLava: Unknown mod call, make sure you have the correct amount of parameters and those parameters are the correct object!")
 			};
 		}
@@ -541,13 +540,11 @@ namespace BiomeLava
 		#region LavaDrawing
 		private void DrawLavas(bool isBackground = false)
 		{
-			Main.NewText(lavaStyle);
 			Main.drewLava = false;
 			if (!isBackground)
 			{
 				lavaStyle = CalculateLavaStyle();
 				LavaStylesLoader.IsLavaActive();
-				//lavaStyle = ModContent.GetInstance<ExampleMod.ExampleLavaStyle>().Slot;
 				for (int i = 0; i < LavaStyleID.Count; i++)
 				{
 					if (lavaStyle != i)
