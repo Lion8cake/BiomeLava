@@ -59,8 +59,6 @@ namespace BiomeLava
 		{
 			instance = this;
 
-			LoaderManager.Get<LavaStylesLoader>().ResizeArrays();
-
 			IL_LiquidRenderer.DrawNormalLiquids += BlockLavaDrawing;
 			IL_Main.DoDraw += IL_Main_DoDraw;
 			IL_Main.RenderWater += IL_Main_RenderWater;
@@ -362,7 +360,7 @@ namespace BiomeLava
 				float num2 = lavaLightColor[lavaStyle].Y;
 				float num3 = lavaLightColor[lavaStyle].Z;
 				LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref num, ref num2, ref num3);
-				for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; j++)
+				for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalCount; j++)
 				{
 					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 					{
@@ -580,7 +578,7 @@ namespace BiomeLava
 				//LiquidRenderer.Instance.PrepareDraw(drawArea); //already called
 			}*/
 			bool flag = false;
-			for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; j++)
+			for (int j = 0; j < LoaderManager.Get<LavaStylesLoader>().TotalCount; j++)
 			{
 				if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 				{
@@ -1237,7 +1235,7 @@ namespace BiomeLava
 			bool flag7 = false;
 			if (flag6)
 			{
-				for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; i++)
+				for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalCount; i++)
 				{
 					if (lavaLiquidAlpha[i] > 0f && i != num2)
 					{
@@ -1293,7 +1291,7 @@ namespace BiomeLava
 
 		public void InitialDrawLavafall(WaterfallManager waterfallManager)
 		{
-			for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalLavaCount; i++)
+			for (int i = 0; i < LoaderManager.Get<LavaStylesLoader>().TotalCount; i++)
 			{
 				if (lavaLiquidAlpha[i] > 0f)
 				{

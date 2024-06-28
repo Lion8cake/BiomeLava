@@ -7,66 +7,93 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using System.Collections.Generic;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Reflection;
+using ReLogic.Content;
 
 namespace BiomeLava.ModLoader
 {
-	public class LavaStylesLoader : SceneEffectLoader<ModLavaStyle>
+	public class LavaStylesLoader : ModSystem
 	{
-		public LavaStylesLoader()
+		private static readonly MethodInfo ResizeArrayMethodInfo;
+
+		static LavaStylesLoader()
 		{
-			InitializeLava(LavaStyleID.Count);
+			ResizeArrayMethodInfo = typeof(ModContent).GetMethod("ResizeArrays", BindingFlags.NonPublic | BindingFlags.Static);
 		}
 
-		internal int TotalLavaCount { get; set; }
-
-		internal List<ModLavaStyle> lavaList = new List<ModLavaStyle>();
-
-		/// <summary>
-		/// Initializes the loader based on the vanilla count of the ModType.
-		/// </summary>
-		internal void InitializeLava(int vanillaCount)
+		private static void ResizeArrays(ResizeArray_orig orig, bool unloading)
 		{
-			VanillaCount = vanillaCount;
-			TotalLavaCount = vanillaCount;
+			orig.Invoke(unloading);
+			int totalCount = ModContent.GetInstance<LavaStylesLoader>().TotalCount;
+			Array.Resize(ref BiomeLava.instance.lavaBlockTexture, totalCount);
+			Array.Resize(ref BiomeLava.instance.lavaSlopeTexture, totalCount);
+			Array.Resize(ref BiomeLava.instance.lavaTextures, totalCount);
+			Array.Resize(ref BiomeLava.instance.lavaWaterfallTexture, totalCount);
+			Array.Resize(ref BiomeLava.lavaLiquidAlpha, totalCount);
+			Array.Resize(ref BiomeLava.instance.lavaLightColor, totalCount);
+
+			Array.Resize(ref BiomeLava.instance.lavaBubbleDust, totalCount);
+			Array.Resize(ref BiomeLava.instance.lavaDripGore, totalCount);
+			Array.Resize(ref BiomeLava.instance.lavafallGlowmask, totalCount);
 		}
 
-		protected int ReserveLava()
+		private readonly List<ModLavaStyle> _content = [];
+
+		public IReadOnlyList<ModLavaStyle> Content => _content;
+
+		public int VanillaCount => LavaStyleID.Count;
+
+		public int ModCount => _content.Count;
+
+		public int TotalCount => VanillaCount + ModCount;
+
+		public override void Load()
 		{
-			return TotalLavaCount++;
+			if (ResizeArrayMethodInfo != null)
+			{
+				MonoModHooks.Add(ResizeArrayMethodInfo, ResizeArrays);
+			}
 		}
 
-		public int RegisterLava(ModLavaStyle obj)
+		public override void PostSetupContent()
 		{
-			int result = ReserveLava();
-			ModTypeLookup<ModLavaStyle>.Register(obj);
-			lavaList.Add(obj);
-			return result;
+			foreach (ModLavaStyle item in ModContent.GetInstance<LavaStylesLoader>().Content)
+			{
+				int Slot = item.Slot;
+				BiomeLava.instance.lavaTextures[Slot] = ModContent.Request<Texture2D>(item.Texture, (AssetRequestMode)2);
+				BiomeLava.instance.lavaBlockTexture[Slot] = ModContent.Request<Texture2D>(item.BlockTexture, (AssetRequestMode)2);
+				BiomeLava.instance.lavaSlopeTexture[Slot] = ModContent.Request<Texture2D>(item.SlopeTexture, (AssetRequestMode)2);
+				BiomeLava.instance.lavaWaterfallTexture[Slot] = ModContent.Request<Texture2D>(item.WaterfallTexture, (AssetRequestMode)2);
+				BiomeLava.instance.lavaLightColor[Slot] = Vector3.Zero;
+
+				BiomeLava.instance.lavaBubbleDust[Slot] = item.GetSplashDust();
+				BiomeLava.instance.lavaDripGore[Slot] = item.GetDropletGore();
+				BiomeLava.instance.lavafallGlowmask[Slot] = item.LavafallGlowmask();
+			}
 		}
 
-		internal void Unload()
+		public ModLavaStyle Get(int type)
 		{
-			TotalLavaCount = VanillaCount;
+			type -= VanillaCount;
+			return type >= 0 && type < _content.Count ? _content[type] : null;
 		}
 
-		internal void ResizeArrays()
+		internal int Register(ModLavaStyle instance)
 		{
-			Array.Resize(ref BiomeLava.instance.lavaBlockTexture, TotalLavaCount + 1);
-			Array.Resize(ref BiomeLava.instance.lavaSlopeTexture, TotalLavaCount + 1);
-			Array.Resize(ref BiomeLava.instance.lavaTextures, TotalLavaCount + 1);
-			Array.Resize(ref BiomeLava.instance.lavaWaterfallTexture, TotalLavaCount + 1);
-			Array.Resize(ref BiomeLava.lavaLiquidAlpha, TotalLavaCount + 1);
-			Array.Resize(ref BiomeLava.instance.lavaLightColor, TotalLavaCount + 1);
-
-			Array.Resize(ref BiomeLava.instance.lavaBubbleDust, TotalLavaCount + 1);
-			Array.Resize(ref BiomeLava.instance.lavaDripGore, TotalLavaCount + 1);
-			Array.Resize(ref BiomeLava.instance.lavafallGlowmask, TotalLavaCount + 1);
+			int type = TotalCount;
+			ModTypeLookup<ModLavaStyle>.Register(instance);
+			_content.Add(instance);
+			return type;
 		}
+
+		private delegate void ResizeArray_orig(bool unloading);
 
 		public void UpdateLiquidAlphas()
 		{
-			if (BiomeLava.lavaStyle >= base.VanillaCount)
+			if (BiomeLava.lavaStyle >= VanillaCount)
 			{
-				for (int i = 0; i < base.VanillaCount; i++)
+				for (int i = 0; i < VanillaCount; i++)
 				{
 					BiomeLava.lavaLiquidAlpha[i] -= 0.2f;
 					if (BiomeLava.lavaLiquidAlpha[i] < 0f)
@@ -75,7 +102,7 @@ namespace BiomeLava.ModLoader
 					}
 				}
 			}
-			foreach (ModLavaStyle item in list)
+			foreach (ModLavaStyle item in ModContent.GetInstance<LavaStylesLoader>().Content)
 			{
 				int type = item.Slot;
 				if (BiomeLava.lavaStyle == type)
@@ -108,7 +135,7 @@ namespace BiomeLava.ModLoader
 
 		public static void IsLavaActive()
 		{
-			foreach (ModLavaStyle item in LoaderManager.Get<LavaStylesLoader>().lavaList)
+			foreach (ModLavaStyle item in ModContent.GetInstance<LavaStylesLoader>().Content)
 			{
 				int type = item.Slot;
 				ModLavaStyle lavaStyle = LoaderManager.Get<LavaStylesLoader>().Get(type);
@@ -123,8 +150,9 @@ namespace BiomeLava.ModLoader
 			}
 		}
 
+		//unimplemented
 		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, bool Zone), *overload1* Vector3 lightColor), *overload2* bool WaterfallGlowmask), *overload3* int BuffID, bool keepOnFire)
-		public static object ModCalledLava(Mod mod, String lavaStyleName, Texture2D texture, Texture2D blockTexture, Texture2D slopeTexture, Texture2D waterfallTexture, int DustID, int GoreID, bool IsActive, Vector3 lightcolor, bool waterfallGlowmask = true, int buffID = BuffID.OnFire, bool keepOnFire = false)
+		public static object ModCalledLava(Mod mod, string lavaStyleName, Texture2D texture, Texture2D blockTexture, Texture2D slopeTexture, Texture2D waterfallTexture, int DustID, int GoreID, bool IsActive, Vector3 lightcolor, bool waterfallGlowmask = true, int buffID = BuffID.OnFire, bool keepOnFire = false)
 		{
 			//turn the parameters into a new ModLavaStyle
 			return true;

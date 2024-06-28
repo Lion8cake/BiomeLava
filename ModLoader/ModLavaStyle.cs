@@ -20,7 +20,7 @@ namespace BiomeLava.ModLoader
 		/// <summary>
 		/// The ID of the lava style.
 		/// </summary>
-		public int Slot { get; internal set; }
+		public int Slot { get; private set; } = -1;
 
 		public virtual string BlockTexture => Texture + "_Block";
 
@@ -30,21 +30,12 @@ namespace BiomeLava.ModLoader
 
 		protected sealed override void Register()
 		{
-			Slot = LoaderManager.Get<LavaStylesLoader>().RegisterLava(this);
+			Slot = LoaderManager.Get<LavaStylesLoader>().Register(this);
 		}
 
 		public sealed override void SetupContent()
 		{
 			SetStaticDefaults();
-			BiomeLava.instance.lavaTextures[Slot] = ModContent.Request<Texture2D>(Texture, (AssetRequestMode)2);
-			BiomeLava.instance.lavaBlockTexture[Slot] = ModContent.Request<Texture2D>(BlockTexture, (AssetRequestMode)2);
-			BiomeLava.instance.lavaSlopeTexture[Slot] = ModContent.Request<Texture2D>(SlopeTexture, (AssetRequestMode)2);
-			BiomeLava.instance.lavaWaterfallTexture[Slot] = ModContent.Request<Texture2D>(WaterfallTexture, (AssetRequestMode)2);
-			BiomeLava.instance.lavaLightColor[Slot] = Vector3.Zero;
-
-			BiomeLava.instance.lavaBubbleDust[Slot] = GetSplashDust();
-			BiomeLava.instance.lavaDripGore[Slot] = GetDropletGore();
-			BiomeLava.instance.lavafallGlowmask[Slot] = LavafallGlowmask();
 		}
 
 		/// <summary>
