@@ -1,1 +1,23 @@
+Configs: {
+	BiomeLavaConfig: {
+		DisplayName: Biome Lava Config
+		Headers.BiomeLavaServerConfig: Biome Lava Server Config
 
+		LavaDebuffs: {
+			Label: Lava style debuffs
+			Tooltip: Some lava styles will inflict different debuff/s apon contact
+		}
+	}
+}
+
+Buffs: {
+	Tarred: {
+		DisplayName: Tarred
+		Description: Movement is slowed
+	}
+
+	HolyFire: {
+		DisplayName: Holy Fire
+		Description: We're boiling the HELL out of it
+	}
+}

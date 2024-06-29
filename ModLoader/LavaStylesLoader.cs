@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using ReLogic.Content;
 using Terraria.Localization;
+using Terraria;
 
 namespace BiomeLava.ModLoader
 {
@@ -33,6 +34,7 @@ namespace BiomeLava.ModLoader
 			Array.Resize(ref BiomeLava.instance.lavaBubbleDust, totalCount);
 			Array.Resize(ref BiomeLava.instance.lavaDripGore, totalCount);
 			Array.Resize(ref BiomeLava.instance.lavafallGlowmask, totalCount);
+			Array.Resize(ref BiomeLava.instance.lavakeepOnFire, totalCount);
 		}
 
 		private static readonly List<ModLavaStyle> _content = [];
@@ -67,6 +69,7 @@ namespace BiomeLava.ModLoader
 				BiomeLava.instance.lavaBubbleDust[Slot] = item.GetSplashDust();
 				BiomeLava.instance.lavaDripGore[Slot] = item.GetDropletGore();
 				BiomeLava.instance.lavafallGlowmask[Slot] = item.LavafallGlowmask();
+				BiomeLava.instance.lavakeepOnFire[Slot] = item.InflictsOnFire();
 			}
 		}
 
@@ -130,6 +133,15 @@ namespace BiomeLava.ModLoader
 			}
 		}
 
+		public static void InflictDebuff(Player player, NPC npc, int type, int onfireDuration)
+		{
+			ModLavaStyle lavaStyle = Get(type);
+			if (lavaStyle != null)
+			{
+				lavaStyle?.InflictDebuff(player, npc, onfireDuration);
+			}
+		}
+
 		public static void IsLavaActive()
 		{
 			foreach (ModLavaStyle item in Content)
@@ -149,7 +161,7 @@ namespace BiomeLava.ModLoader
 
 		//Mod calls
 		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, Vector3 lightColor, bool Zone), *overload1* bool WaterfallGlowmask), *overload2* int BuffID, bool keepOnFire)
-		public static object ModCalledLava(Mod mod, string lavaStyleName, string texture, string blockTexture, string slopeTexture, string waterfallTexture, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightcolor, Func<bool> IsActive, Func<bool> waterfallGlowmask, Func<int> buffID, Func<bool> keepOnFire)
+		public static object ModCalledLava(Mod mod, string lavaStyleName, string texture, string blockTexture, string slopeTexture, string waterfallTexture, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightcolor, Func<bool> IsActive, Func<bool> waterfallGlowmask, Func<Player, NPC, int, Action> buffID, Func<bool> keepOnFire)
 		{
 			if (mod == null)
 			{

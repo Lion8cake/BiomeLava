@@ -5,11 +5,11 @@ using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace BiomeLava.Droplets
+namespace BiomeLava.Content.Droplets
 {
-    public class JungleDroplet : ModGore
+    public class CorruptionDroplet : ModGore
     {
-        public override string Texture => "BiomeLava/Assets/Jungle/JungleLavaDrip";
+        public override string Texture => "BiomeLava/Assets/Corruption/CorruptionLavaDrip";
 
 		public override void OnSpawn(Gore gore, IEntitySource source)
         {
@@ -51,7 +51,7 @@ namespace BiomeLava.Droplets
                     gore.frame += 1;
                     if (gore.frame == 5)
                     {
-                        int droplet = Gore.NewGore(new EntitySource_Misc(nameof(CrimsonDroplet)), gore.position, gore.velocity, gore.type);
+                        int droplet = Gore.NewGore(new EntitySource_Misc(nameof(CorruptionDroplet)), gore.position, gore.velocity, gore.type);
                         Main.gore[droplet].frame = 9;
                         Main.gore[droplet].velocity *= 0f;
                     }
@@ -115,9 +115,9 @@ namespace BiomeLava.Droplets
 			float num26 = 1f;
 			float num27 = 0.6f;
 			num27 = ((gore.frame == 0) ? (num27 * 0.1f) : ((gore.frame == 1) ? (num27 * 0.2f) : ((gore.frame == 2) ? (num27 * 0.3f) : ((gore.frame == 3) ? (num27 * 0.4f) : ((gore.frame == 4) ? (num27 * 0.5f) : ((gore.frame == 5) ? (num27 * 0.4f) : ((gore.frame == 6) ? (num27 * 0.2f) : ((gore.frame <= 9) ? (num27 * 0.5f) : ((gore.frame == 10) ? (num27 * 0.5f) : ((gore.frame == 11) ? (num27 * 0.4f) : ((gore.frame == 12) ? (num27 * 0.3f) : ((gore.frame == 13) ? (num27 * 0.2f) : ((gore.frame != 14) ? 0f : (num27 * 0.1f))))))))))))));
-		    num24 = 0.4f * num27; //R
-			num25 = 0.4f * num27; //G
-			num26 = 0.4f * num27; //B
+			num24 = 0.5f * num27; //R
+			num25 = 1f * num27; //G
+			num26 = 0.1f * num27; //B
 			Lighting.AddLight(gore.position + new Vector2(8f, 8f), num24, num25, num26);
 
 			Vector2 oldVelocity = gore.velocity;

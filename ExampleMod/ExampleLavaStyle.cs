@@ -1,7 +1,7 @@
 ﻿using BiomeLava.ModLoader;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+/*using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Terraria;
@@ -37,5 +37,30 @@ namespace BiomeLava.ExampleMod
 		{
 			return true;
 		}
+
+		public override bool InflictsOnFire()
+		{
+			return true;
+		}
+
+		public override void InflictDebuff(Player player, NPC npc, int onfireDuration)
+		{
+			int buffID = BuffID.Venom;
+			if (player != null)
+			{
+				player.AddBuff(buffID, onfireDuration / 2);
+			}
+			if (npc != null)
+			{
+				if (Main.remixWorld && !npc.friendly)
+				{
+					npc.AddBuff(buffID, onfireDuration / 2);
+				}
+				else
+				{
+					npc.AddBuff(buffID, onfireDuration / 2);
+				}
+			}
+		}
 	}
-}
+}*/

@@ -2,13 +2,15 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
 using System;
 using Terraria;
+using Terraria.GameContent.Events;
+using Terraria.GameContent;
 using Terraria.ModLoader;
 
-namespace BiomeLava.Bubbles
+namespace BiomeLava.Content.Bubbles
 {
-	public class CrimsonLavaDust : ModDust
+	public class CorruptionLavaDust : ModDust
 	{
-		public override string Texture => "BiomeLava/Assets/Crimson/CrimsonLavaBubble";
+		public override string Texture => "BiomeLava/Assets/Corruption/CorruptionLavaBubble";
 
 		public override void SetStaticDefaults()
         {
@@ -54,7 +56,7 @@ namespace BiomeLava.Bubbles
 				{
 					num109 = 1f;
 				}
-				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f + 1f), num109 * 0.5f, num109 * 0.4f, num109 * 0.2f);
+				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f + 1f), num109 * 0.3f, num109, num109 * 0.1f);
 			}
 			else
 			{
@@ -88,9 +90,9 @@ namespace BiomeLava.Bubbles
 				{
 					num3 = 1f;
 				}
-				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f), num3 * 0.5f, num3 * 0.4f, num3 * 0.2f);
+				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f), num3 * 0.5f, num3, num3 * 0.3f);
 			}
-			dust.rotation += dust.velocity.X * 0.5f;
+			dust.rotation += dust.velocity.X * 0.5f;	
 			if (dust.fadeIn > 0f && dust.fadeIn < 100f)
 			{
 				dust.scale += 0.03f;

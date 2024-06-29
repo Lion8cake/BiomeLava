@@ -1,4 +1,4 @@
-﻿using BiomeLava.ModLoader;
+﻿/*using BiomeLava.ModLoader;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,5 +39,10 @@ namespace BiomeLava.ExampleMod
 		{
 			return false;
 		}
+
+		public override bool InflictsOnFire()
+		{
+			return false;
+		}
 	}
-}
+}*/

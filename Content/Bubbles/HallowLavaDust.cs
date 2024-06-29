@@ -4,11 +4,11 @@ using System;
 using Terraria;
 using Terraria.ModLoader;
 
-namespace BiomeLava.Bubbles
+namespace BiomeLava.Content.Bubbles
 {
-	public class JungleLavaDust : ModDust
+	public class HallowLavaDust : ModDust
 	{
-		public override string Texture => "BiomeLava/Assets/Jungle/JungleLavaBubble";
+		public override string Texture => "BiomeLava/Assets/Hallow/HallowLavaBubble";
 
 		public override void SetStaticDefaults()
         {
@@ -54,7 +54,7 @@ namespace BiomeLava.Bubbles
 				{
 					num109 = 1f;
 				}
-				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f + 1f), num109 * 0.4f, num109 * 0.4f, num109 * 0.4f);
+				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f + 1f), num109 * 0.2f, num109 * 0.4f, num109 * 0.5f);
 			}
 			else
 			{
@@ -88,7 +88,7 @@ namespace BiomeLava.Bubbles
 				{
 					num3 = 1f;
 				}
-				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f), num3 * 0.4f, num3 * 0.4f, num3 * 0.4f);
+				Lighting.AddLight((int)(dust.position.X / 16f), (int)(dust.position.Y / 16f), num3 * 0.2f, num3 * 0.4f, num3 * 0.5f);
 			}
 			dust.rotation += dust.velocity.X * 0.5f;
 			if (dust.fadeIn > 0f && dust.fadeIn < 100f)

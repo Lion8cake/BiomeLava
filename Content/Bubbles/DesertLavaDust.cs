@@ -4,7 +4,7 @@ using System;
 using Terraria;
 using Terraria.ModLoader;
 
-namespace BiomeLava.Bubbles
+namespace BiomeLava.Content.Bubbles
 {
 	public class DesertLavaDust : ModDust
 	{
