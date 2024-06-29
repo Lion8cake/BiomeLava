@@ -500,9 +500,9 @@ namespace BiomeLava
 		{
 			return args switch
 			{
-				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, int DustID, int GoreID, Vector3 lightColor, bool IsActive] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive),
-				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, int DustID, int GoreID, Vector3 lightColor, bool IsActive, bool fallMask] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask),
-				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, int DustID, int GoreID, Vector3 lightColor, bool IsActive, bool fallMask, int BuffID, bool OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, BuffID, OnFire),
+				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, null, null, null),
+				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, null, null),
+				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask, Func<int> BuffID, Func<bool> OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, BuffID, OnFire),
 				_ => throw new Exception("BiomeLava: Unknown mod call, make sure you have the correct amount of parameters and those parameters are the correct object!")
 			};
 		}

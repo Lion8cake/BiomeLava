@@ -62,15 +62,11 @@ namespace BiomeLava.ModLoader
 				BiomeLava.instance.lavaBlockTexture[Slot] = ModContent.Request<Texture2D>(item.BlockTexture, (AssetRequestMode)2);
 				BiomeLava.instance.lavaSlopeTexture[Slot] = ModContent.Request<Texture2D>(item.SlopeTexture, (AssetRequestMode)2);
 				BiomeLava.instance.lavaWaterfallTexture[Slot] = ModContent.Request<Texture2D>(item.WaterfallTexture, (AssetRequestMode)2);
+				BiomeLava.instance.lavaLightColor[Slot] = Vector3.Zero;
 
 				BiomeLava.instance.lavaBubbleDust[Slot] = item.GetSplashDust();
 				BiomeLava.instance.lavaDripGore[Slot] = item.GetDropletGore();
 				BiomeLava.instance.lavafallGlowmask[Slot] = item.LavafallGlowmask();
-
-				if (item.LavaLightCall != null)
-					BiomeLava.instance.lavaLightColor[Slot] = (Vector3)item.LavaLightCall;
-				else
-					BiomeLava.instance.lavaLightColor[Slot] = Vector3.Zero;
 			}
 		}
 
@@ -153,7 +149,7 @@ namespace BiomeLava.ModLoader
 
 		//Mod calls
 		//(Mod mod, String LavaName, Asset texture, Asset block, Asset Slope, Asset Waterfall, int DustID, int GoreID, Vector3 lightColor, bool Zone), *overload1* bool WaterfallGlowmask), *overload2* int BuffID, bool keepOnFire)
-		public static object ModCalledLava(Mod mod, string lavaStyleName, string texture, string blockTexture, string slopeTexture, string waterfallTexture, int DustID, int GoreID, Vector3? lightcolor, bool IsActive, bool waterfallGlowmask = true, int buffID = BuffID.OnFire, bool keepOnFire = false)
+		public static object ModCalledLava(Mod mod, string lavaStyleName, string texture, string blockTexture, string slopeTexture, string waterfallTexture, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightcolor, Func<bool> IsActive, Func<bool> waterfallGlowmask, Func<int> buffID, Func<bool> keepOnFire)
 		{
 			if (mod == null)
 			{
@@ -171,6 +167,7 @@ namespace BiomeLava.ModLoader
 			{
 				throw new Exception(Language.GetTextValue("tModLoader.LoadErrorNotLoading"));
 			}
+
 			return mod.AddContent(new ModCallModLavaStyle
 			{
 				NameCall = lavaStyleName,

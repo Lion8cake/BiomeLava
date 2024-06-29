@@ -55,43 +55,119 @@ namespace BiomeLava.ModLoader
 		/// <param name="b">The blue component of light, usually a value between 0 and 1</param>
 		public virtual void ModifyLight(int i, int j, ref float r, ref float g, ref float b)
 		{
-			r = 0.55f;
-			g = 0.33f;
-			b = 0.11f;
+			if (LavaLightCall == null)
+			{
+				r = 0.55f;
+				g = 0.33f;
+				b = 0.11f;
+			}
+			else
+			{
+				Vector3 call = LavaLightCall.Invoke(i, j, r, g, b);
+				r = call.X;
+				g = call.Y;
+				b = call.Z;
+			}
 		}
 
 		/// <summary>
 		/// The ID of the dust that is created when anything splashes in lava.
 		/// </summary>
-		public virtual int GetSplashDust() => NameCall != null ? dustCall : DustID.Lava;
+		public virtual int GetSplashDust()
+		{
+			if (dustCall == null)
+			{
+				return DustID.Lava;
+			}
+			else
+			{
+				int call = dustCall.Invoke();
+				return call;
+			}
+		}
 
 		/// <summary>
 		/// The ID of the gore that represents droplets of lava falling down from a block. Return <see cref="F:Terraria.ID.GoreID.LavaDrip" /> (or another existing droplet gore).
 		/// </summary>
-		public virtual int GetDropletGore() => NameCall != null ? goreCall : GoreID.LavaDrip;
+		public virtual int GetDropletGore()
+		{
+			if (goreCall == null)
+			{
+				return GoreID.LavaDrip;
+			}
+			else
+			{
+				int call = goreCall.Invoke();
+				return call;
+			}
+		}
 
 		/// <summary>
 		/// Return true if the player is in the correct zone to activate the lava.
 		/// </summary>
 		/// <returns></returns>
-		public virtual bool IsLavaActive() => NameCall != null ? IsActiveCall : false;
+		public virtual bool IsLavaActive()
+		{
+			if (IsActiveCall == null)
+			{
+				return false; 
+			}
+			else
+			{
+				bool call = IsActiveCall.Invoke();
+				return call;
+			}
+		}
 
 		/// <summary>
 		/// Return false if the waterfall made by the lavastyle should have a glowmask
 		/// </summary>
 		/// <returns></returns>
-		public virtual bool LavafallGlowmask() => NameCall != null ? LavafallGlowmaskCall : true; 
+		public virtual bool LavafallGlowmask()
+		{
+			if (LavafallGlowmaskCall == null)
+			{
+				return true;
+			}
+			else
+			{
+				bool call = LavafallGlowmaskCall.Invoke();
+				return call;
+			}
+		}
 
 		/// <summary>
 		/// Return false if the lava style shouldnt inflict OnFire when an entity enters the lava
 		/// </summary>
 		/// <returns></returns>
-		public virtual bool InflictsOnFire() => NameCall != null ? InflictsOnFireCall : true; 
+		public virtual bool InflictsOnFire()
+		{
+			if (InflictsOnFireCall == null)
+			{
+				return false;
+			}
+			else
+			{
+				bool call = InflictsOnFireCall.Invoke();
+				return call;
+			}
+		}
 
 		/// <summary>
 		/// The ID of the buff that is given to both the player and NPCs when they enter the lava.
 		/// </summary>
-		public virtual int GetFlameDebuff() => NameCall != null ? buffCall : BuffID.OnFire;
+		public virtual int GetFlameDebuff()
+		{
+			if (buffCall == null)
+			{
+				return BuffID.OnFire;
+			}
+			else
+			{
+				int call = buffCall.Invoke();
+				return call;
+			}
+		}
 
 		//Modcall stuff
 		internal string NameCall;
@@ -104,18 +180,18 @@ namespace BiomeLava.ModLoader
 
 		internal string WaterfallTextureCall;
 
-		internal int dustCall;
+		internal Func<int> dustCall;
 
-		internal int goreCall;
+		internal Func<int> goreCall;
 
-		internal bool IsActiveCall;
+		internal Func<bool> IsActiveCall;
 
-		internal Vector3? LavaLightCall;
+		internal Func<int, int, float, float, float, Vector3> LavaLightCall;
 
-		internal bool LavafallGlowmaskCall;
+		internal Func<bool> LavafallGlowmaskCall;
 
-		internal int buffCall;
+		internal Func<int> buffCall;
 
-		internal bool InflictsOnFireCall;
+		internal Func<bool> InflictsOnFireCall;
 	}
 }
