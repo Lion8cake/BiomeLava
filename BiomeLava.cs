@@ -24,33 +24,34 @@ using BiomeLava.Content.Debuffs;
 
 namespace BiomeLava
 {
+	public sealed record LavaData(
+		int BubbleDust,
+		int DripGore,
+
+		bool KeepOnFire,
+		int ExtraDebuff,
+		int ExtraDebuffLength,
+
+		Vector3 LightColor,
+		bool LavafallGlowmask
+		);
+
+	// TODO: kill lion
 	public class BiomeLava : Mod
 	{
 		public static int lavaStyle;
 
-		public static float[] lavaLiquidAlpha = new float[7];
+		public static float[] lavaLiquidAlpha = new float[LavaStyleID.Count];
 
-		public Asset<Texture2D>[] lavaTextures = new Asset<Texture2D>[7];
+		public Asset<Texture2D>[] lavaTextures = new Asset<Texture2D>[LavaStyleID.Count];
 
-		public Asset<Texture2D>[] lavaSlopeTexture = new Asset<Texture2D>[7];
+		public Asset<Texture2D>[] lavaSlopeTexture = new Asset<Texture2D>[LavaStyleID.Count];
 
-		public Asset<Texture2D>[] lavaBlockTexture = new Asset<Texture2D>[7];
+		public Asset<Texture2D>[] lavaBlockTexture = new Asset<Texture2D>[LavaStyleID.Count];
 
-		public Asset<Texture2D>[] lavaWaterfallTexture = new Asset<Texture2D>[7];
+		public Asset<Texture2D>[] lavaWaterfallTexture = new Asset<Texture2D>[LavaStyleID.Count];
 
-		public int[] lavaBubbleDust = new int[7];
-
-		public int[] lavaDripGore = new int[7];
-
-		public int[] lavaExtraDebuff = new int[7];
-
-		public int[] lavaExtraDebuffLength = new int[7];
-
-		public Vector3[] lavaLightColor = new Vector3[7];
-
-		public bool[] lavafallGlowmask = new bool[7];
-
-		public bool[] lavakeepOnFire = new bool[7];
+		public LavaData[] lavaData = new LavaData[LavaStyleID.Count];
 
 		public static BiomeLava instance;
 
@@ -120,106 +121,125 @@ namespace BiomeLava
 			IL_TileDrawing.EmitLiquidDrops -= LavaDropletReplacer;
 		}
 
-		public override void PostSetupContent()
-		{
-			if (!Main.dedServ)
-			{
-				for (int i = 0; i < LavaStyleID.Count; i++)
-				{
-					switch(i)
-					{
-						case LavaStyleID.Purity:
-							lavaTextures[i] = Instance._liquidTextures[WaterStyleID.Lava];
-							lavaSlopeTexture[i] = TextureAssets.LiquidSlope[WaterStyleID.Lava];
-							lavaBlockTexture[i] = TextureAssets.Liquid[WaterStyleID.Lava];
-							lavaBubbleDust[i] = DustID.Lava;
-							lavaDripGore[i] = GoreID.LavaDrip;
-							lavaLightColor[i] = new Vector3(0.55f, 0.33f, 0.11f);
-							lavaWaterfallTexture[i] = Main.instance.waterfallManager.waterfallTexture[WaterfallID.Lava];
-							lavafallGlowmask[i] = true;
-							lavaExtraDebuff[i] = BuffID.OnFire;
-							lavaExtraDebuffLength[i] = 0;
-							lavakeepOnFire[i] = true;
-							break;
-						case LavaStyleID.Corrupt:
-							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava");
-							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Slope");
-							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Block");
-							lavaBubbleDust[i] = ModContent.DustType<CorruptionLavaDust>();
-							lavaDripGore[i] = ModContent.GoreType<CorruptionDroplet>();
-							lavaLightColor[i] = new Vector3(0.33f, 0.55f, 0.11f);
-							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Waterfall");
-							lavafallGlowmask[i] = true;
-							lavaExtraDebuff[i] = BuffID.CursedInferno;
-							lavaExtraDebuffLength[i] = 0;
-							lavakeepOnFire[i] = false;
-							break;
-						case LavaStyleID.Crimson:
-							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava");
-							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Slope");
-							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Block");
-							lavaBubbleDust[i] = ModContent.DustType<CrimsonLavaDust>();
-							lavaDripGore[i] = ModContent.GoreType<CrimsonDroplet>();
-							lavaLightColor[i] = new Vector3(0.55f, 0.44f, 0.11f);
-							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Waterfall");
-							lavafallGlowmask[i] = true;
-							lavaExtraDebuff[i] = BuffID.Ichor;
-							lavaExtraDebuffLength[i] = 60 * 14;
-							lavakeepOnFire[i] = true;
-							break;
-						case LavaStyleID.Hallow:
-							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava");
-							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Slope");
-							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Block");
-							lavaBubbleDust[i] = ModContent.DustType<HallowLavaDust>();
-							lavaDripGore[i] = ModContent.GoreType<HallowDroplet>();
-							lavaLightColor[i] = new Vector3(0.33f, 0.77f, 0.99f);
-							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Waterfall");
-							lavafallGlowmask[i] = true;
-							lavaExtraDebuff[i] = ModContent.BuffType<HolyFire>();
-							lavaExtraDebuffLength[i] = 0;
-							lavakeepOnFire[i] = false;
-							break;
-						case LavaStyleID.Jungle:
-							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava");
-							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Slope");
-							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Block");
-							lavaBubbleDust[i] = ModContent.DustType<JungleLavaDust>();
-							lavaDripGore[i] = ModContent.GoreType<JungleDroplet>();
-							lavaLightColor[i] = new Vector3(0.22f, 0.22f, 0.11f);
-							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Waterfall");
-							lavafallGlowmask[i] = false;
-							lavaExtraDebuff[i] = ModContent.BuffType<Tarred>();
-							lavaExtraDebuffLength[i] = 60 * 14;
-							lavakeepOnFire[i] = true;
-							break;
-						case LavaStyleID.Snow:
-							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava");
-							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Slope");
-							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Block");
-							lavaBubbleDust[i] = ModContent.DustType<IceLavaDust>();
-							lavaDripGore[i] = ModContent.GoreType<IceDroplet>();
-							lavaLightColor[i] = new Vector3(0.44f, 0.22f, 0.11f);
-							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Waterfall");
-							lavafallGlowmask[i] = false;
-							lavaExtraDebuff[i] = BuffID.Frostburn;
-							lavaExtraDebuffLength[i] = 0;
-							lavakeepOnFire[i] = false;
-							break;
-						case LavaStyleID.Desert:
-							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava");
-							lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Slope");
-							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Block");
-							lavaBubbleDust[i] = ModContent.DustType<DesertLavaDust>();
-							lavaDripGore[i] = ModContent.GoreType<IceDroplet>();
-							lavaLightColor[i] = new Vector3(0.77f, 0.44f, 0.11f);
-							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Waterfall");
-							lavafallGlowmask[i] = true;
-							lavaExtraDebuff[i] = BuffID.OnFire;
-							lavaExtraDebuffLength[i] = 0;
-							lavakeepOnFire[i] = true;
-							break;
-					}
+		public override void PostSetupContent() {
+			if (Main.dedServ) {
+				return;
+			}
+
+			for (int i = 0; i < LavaStyleID.Count; i++) {
+				switch (i) {
+					case LavaStyleID.Purity:
+						lavaTextures[i] = Instance._liquidTextures[WaterStyleID.Lava];
+						lavaSlopeTexture[i] = TextureAssets.LiquidSlope[WaterStyleID.Lava];
+						lavaBlockTexture[i] = TextureAssets.Liquid[WaterStyleID.Lava];
+						lavaWaterfallTexture[i] = Main.instance.waterfallManager.waterfallTexture[WaterfallID.Lava];
+
+						lavaData[i] = new(
+							BubbleDust: DustID.Lava,
+							DripGore: GoreID.LavaDrip,
+							KeepOnFire: true,
+							ExtraDebuff: BuffID.OnFire,
+							ExtraDebuffLength: 0,
+							LightColor: new Vector3(0.55f, 0.33f, 0.11f),
+							LavafallGlowmask: true
+							);
+						break;
+					case LavaStyleID.Corrupt:
+						lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava");
+						lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Slope");
+						lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Block");
+						lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Corruption/CorruptionLava_Waterfall");
+
+						lavaData[i] = new(
+							BubbleDust: ModContent.DustType<CorruptionLavaDust>(),
+							DripGore: ModContent.GoreType<CorruptionDroplet>(),
+							KeepOnFire: false,
+							ExtraDebuff: BuffID.CursedInferno,
+							ExtraDebuffLength: 0,
+							LightColor: new Vector3(0.33f, 0.55f, 0.11f),
+							LavafallGlowmask: true
+							);
+						break;
+					case LavaStyleID.Crimson:
+						lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava");
+						lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Slope");
+						lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Block");
+						lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Crimson/CrimsonLava_Waterfall");
+
+						lavaData[i] = new(
+							BubbleDust: ModContent.DustType<CrimsonLavaDust>(),
+							DripGore: ModContent.GoreType<CrimsonDroplet>(),
+							KeepOnFire: true,
+							ExtraDebuff: BuffID.Ichor,
+							ExtraDebuffLength: 60 * 14,
+							LightColor: new Vector3(0.55f, 0.44f, 0.11f),
+							LavafallGlowmask: true
+							);
+						break;
+					case LavaStyleID.Hallow:
+						lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava");
+						lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Slope");
+						lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Block");
+						lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Hallow/HallowLava_Waterfall");
+
+						lavaData[i] = new(
+							BubbleDust: ModContent.DustType<HallowLavaDust>(),
+							DripGore: ModContent.GoreType<HallowDroplet>(),
+							KeepOnFire: false,
+							ExtraDebuff: ModContent.BuffType<HolyFire>(),
+							ExtraDebuffLength: 0,
+							LightColor: new Vector3(0.33f, 0.77f, 0.99f),
+							LavafallGlowmask: true
+							);
+						break;
+					case LavaStyleID.Jungle:
+						lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava");
+						lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Slope");
+						lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Block");
+						lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Waterfall");
+
+						lavaData[i] = new(
+							BubbleDust: ModContent.DustType<JungleLavaDust>(),
+							DripGore: ModContent.GoreType<JungleDroplet>(),
+							KeepOnFire: true,
+							ExtraDebuff: ModContent.BuffType<Tarred>(),
+							ExtraDebuffLength: 60 * 14,
+							LightColor: new Vector3(0.22f, 0.22f, 0.11f),
+							LavafallGlowmask: true
+							);
+						break;
+					case LavaStyleID.Snow:
+						lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava");
+						lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Slope");
+						lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Block");
+						lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava_Waterfall");
+
+						lavaData[i] = new(
+							BubbleDust: ModContent.DustType<IceLavaDust>(),
+							DripGore: ModContent.GoreType<IceDroplet>(),
+							KeepOnFire: false,
+							ExtraDebuff: BuffID.Frostburn,
+							ExtraDebuffLength: 0,
+							LightColor: new Vector3(0.44f, 0.22f, 0.11f),
+							LavafallGlowmask: false
+							);
+						break;
+					case LavaStyleID.Desert:
+						lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava");
+						lavaSlopeTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Slope");
+						lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Block");
+						lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Waterfall");
+
+						lavaData[i] = new(
+							BubbleDust: ModContent.DustType<DesertLavaDust>(),
+							DripGore: ModContent.GoreType<DesertDroplet>(),
+							KeepOnFire: true,
+							ExtraDebuff: BuffID.OnFire,
+							ExtraDebuffLength: 0,
+							LightColor: new Vector3(0.77f, 0.44f, 0.11f),
+							LavafallGlowmask: true
+							);
+						break;
 				}
 			}
 		}
@@ -227,7 +247,7 @@ namespace BiomeLava
 		#region ILEditsandDetours
 		private Color WaterfallGlowmaskEditor(On_WaterfallManager.orig_StylizeColor orig, float alpha, int maxSteps, int waterfallType, int y, int s, Tile tileCache, Color aColor)
 		{
-			if (lavafallGlowmask[lavaStyle] == false)
+			if (lavaData[lavaStyle].LavafallGlowmask == false)
 			{
 				return aColor;
 			}
@@ -241,9 +261,9 @@ namespace BiomeLava
 		{
 			if (waterfallType == 1)
 			{
-				float r = lavaLightColor[lavaStyle].X;
-				float g = lavaLightColor[lavaStyle].Y;
-				float b = lavaLightColor[lavaStyle].Z;
+				float r = lavaData[lavaStyle].LightColor.X;
+				float g = lavaData[lavaStyle].LightColor.Y;
+				float b = lavaData[lavaStyle].LightColor.Z;
 				LavaStylesLoader.ModifyLight(x, y, lavaStyle, ref r, ref g, ref b);
 				if (!(r == 0 && g == 0 && b == 0))
 				{
@@ -277,7 +297,7 @@ namespace BiomeLava
 		{
 			ILCursor c = new ILCursor(il);
 			c.GotoNext(MoveType.After, i => i.MatchLdarg(out _), i => i.MatchLdcI4(374), i => i.MatchBneUn(out _), i => i.MatchLdcI4(716));
-			c.EmitDelegate<Func<int, int>>(type => lavaDripGore[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].DripGore);
 		}
 
 		private void SplashItemLava(ILContext il)
@@ -286,11 +306,11 @@ namespace BiomeLava
 			c.GotoNext(MoveType.After, i => i.MatchStloc(15), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].BubbleDust);
 			c.GotoNext(MoveType.After, i => i.MatchStloc(23), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type2 => lavaData[lavaStyle].BubbleDust);
 		}
 
 		private void SplashProjectileLava(ILContext il)
@@ -299,11 +319,11 @@ namespace BiomeLava
 			c.GotoNext(MoveType.After, i => i.MatchStloc(22), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].BubbleDust);
 			c.GotoNext(MoveType.After, i => i.MatchStloc(30), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type2 => lavaData[lavaStyle].BubbleDust);
 		}
 
 		private void SplashNPCLava(ILContext il)
@@ -312,11 +332,11 @@ namespace BiomeLava
 			c.GotoNext(MoveType.After, i => i.MatchStloc(10), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].BubbleDust);
 			c.GotoNext(MoveType.After, i => i.MatchStloc(19), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type2 => lavaData[lavaStyle].BubbleDust);
 		}
 
 		private void SplashPlayerLava(ILContext il)
@@ -330,24 +350,24 @@ namespace BiomeLava
 				if (ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs)
 				{
 					LavaStylesLoader.InflictDebuff(player, null, lavaStyle, onFiretime);
-					if (lavaStyle < LavaStyleID.Count && lavaExtraDebuff[lavaStyle] != BuffID.OnFire)
+					if (lavaStyle < LavaStyleID.Count && lavaData[lavaStyle].ExtraDebuff != BuffID.OnFire)
 					{
-						player.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : onFiretime);
+						player.AddBuff(lavaData[lavaStyle].ExtraDebuff, lavaData[lavaStyle].ExtraDebuffLength != 0 ? lavaData[lavaStyle].ExtraDebuffLength : onFiretime);
 					}
 				}
 			});
 			//Onfire tamporing
 			c.GotoNext(MoveType.Before, i => i.MatchLdloc(161), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
-			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs ? type : 0);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].KeepOnFire || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs ? type : 0);
 			//Dusts
 			c.GotoNext(MoveType.After, i => i.MatchStloc(172), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(), 
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8), 
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].BubbleDust);
 			c.GotoNext(MoveType.After, i => i.MatchStloc(180), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
 				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type2 => lavaData[lavaStyle].BubbleDust);
 		}
 
 		private void LavaDebuffEdits(ILContext il)
@@ -362,15 +382,15 @@ namespace BiomeLava
 					if (ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs)
 					{
 						LavaStylesLoader.InflictDebuff(null, npc, lavaStyle, Main.remixWorld && !npc.friendly ? 180 : 420);
-						if (lavaStyle < LavaStyleID.Count && lavaExtraDebuff[lavaStyle] != BuffID.OnFire)
+						if (lavaStyle < LavaStyleID.Count && lavaData[lavaStyle].ExtraDebuff != BuffID.OnFire)
 						{
 							if (Main.remixWorld && !npc.friendly)
 							{
-								npc.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : 180);
+								npc.AddBuff(lavaData[lavaStyle].ExtraDebuff, lavaData[lavaStyle].ExtraDebuffLength != 0 ? lavaData[lavaStyle].ExtraDebuffLength : 180);
 							}
 							else
 							{
-								npc.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : 420);
+								npc.AddBuff(lavaData[lavaStyle].ExtraDebuff, lavaData[lavaStyle].ExtraDebuffLength != 0 ? lavaData[lavaStyle].ExtraDebuffLength : 420);
 							}
 						}
 					}
@@ -378,9 +398,9 @@ namespace BiomeLava
 			});
 			//Onfire Tamporing
 			c.GotoNext(MoveType.Before, i => i.MatchLdcI4(180), i => i.MatchLdcI4(0), i => i.MatchCall<NPC>("AddBuff"), i => i.MatchBr(out _));
-			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].KeepOnFire || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
 			c.GotoNext(MoveType.Before, i => i.MatchLdcI4(420), i => i.MatchLdcI4(0), i => i.MatchCall<NPC>("AddBuff"), i => i.MatchLdarg0());
-			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].KeepOnFire || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
 		}
 
 		private void DrawLavatoCapture(ILContext il)
@@ -432,21 +452,21 @@ namespace BiomeLava
 			}
 			if (tile.LiquidType == LiquidID.Lava)
 			{
-				float num = lavaLightColor[lavaStyle].X;
-				float num2 = lavaLightColor[lavaStyle].Y;
-				float num3 = lavaLightColor[lavaStyle].Z;
+				float num = lavaData[lavaStyle].LightColor.X;
+				float num2 = lavaData[lavaStyle].LightColor.Y;
+				float num3 = lavaData[lavaStyle].LightColor.Z;
 				LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref num, ref num2, ref num3);
 				for (int j = 0; j < LavaStylesLoader.TotalCount; j++)
 				{
 					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
 					{
-						float r = lavaLightColor[j].X;
-						float g = lavaLightColor[j].Y;
-						float b = lavaLightColor[j].Z;
+						float r = lavaData[j].LightColor.X;
+						float g = lavaData[j].LightColor.Y;
+						float b = lavaData[j].LightColor.Z;
 						LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), j, ref r, ref g, ref b);
-						float r2 = lavaLightColor[lavaStyle].X;
-						float g2 = lavaLightColor[lavaStyle].Y;
-						float b2 = lavaLightColor[lavaStyle].Z;
+						float r2 = lavaData[lavaStyle].LightColor.X;
+						float g2 = lavaData[lavaStyle].LightColor.Y;
+						float b2 = lavaData[lavaStyle].LightColor.Z;
 						LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref r2, ref g2, ref b2);
 						num = Single.Lerp(r, r2, lavaLiquidAlpha[lavaStyle]);
 						num2 = Single.Lerp(g, g2, lavaLiquidAlpha[lavaStyle]);
@@ -481,9 +501,9 @@ namespace BiomeLava
 		{
 			ILCursor c = new ILCursor(il);
 			c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(16), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type => lavaData[lavaStyle].BubbleDust);
 			c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(8), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
+			c.EmitDelegate<Func<int, int>>(type2 => lavaData[lavaStyle].BubbleDust);
 		}
 
 		private void BlockLavaDrawingForSlopes(On_TileDrawing.orig_DrawTile_LiquidBehindTile orig, TileDrawing self, bool solidLayer, bool inFrontOfPlayers, int waterStyleOverride, Vector2 screenPosition, Vector2 screenOffset, int tileX, int tileY, Tile tileCache)
@@ -951,11 +971,11 @@ namespace BiomeLava
 						{
 							if (Main.tile[j, i].LiquidAmount > 200 && Main.rand.NextBool(700))
 							{
-								Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16)), 16, 16, lavaBubbleDust[num4]);
+								Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16)), 16, 16, lavaData[num4].BubbleDust);
 							}
 							if (value.Y == 0 && Main.rand.NextBool(350))
 							{
-								int num15 = Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f), 16, 8, lavaBubbleDust[num4], 0f, 0f, 50, default(Color), 1.5f);
+								int num15 = Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f), 16, 8, lavaData[num4].BubbleDust, 0f, 0f, 50, default(Color), 1.5f);
 								Dust obj2 = Main.dust[num15];
 								obj2.velocity *= 0.8f;
 								Main.dust[num15].velocity.X *= 2f;

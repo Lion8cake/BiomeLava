@@ -1,36 +1,20 @@
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using ReLogic.Content;
-using System;
-using System.Collections.Generic;
 using Terraria;
-using Terraria.Audio;
-using Terraria.DataStructures;
-using Terraria.GameContent.Liquid;
-using Terraria.GameContent;
 using Terraria.ID;
-using Terraria.Localization;
 using Terraria.ModLoader;
-using Terraria.Utilities;
 
-namespace BiomeLava.ModLoader
-{
-    public abstract class ModLavaStyle : ModTexturedType
+namespace BiomeLava.ModLoader {
+	public abstract class ModLavaStyle : ModTexturedType
 	{
 		/// <summary>
 		/// The ID of the lava style.
 		/// </summary>
 		public int Slot { get; private set; } = -1;
 
-		public override string Name => NameCall ?? base.Name;
+		public virtual string BlockTexture => Texture + "_Block";
 
-		public override string Texture => TextureCall ?? base.Texture;
+		public virtual string SlopeTexture => Texture + "_Slope";
 
-		public virtual string BlockTexture => BlockTextureCall ?? Texture + "_Block";
-
-		public virtual string SlopeTexture => SlopeTextureCall ?? Texture + "_Slope";
-
-		public virtual string WaterfallTexture => WaterfallTextureCall ?? Texture + "_Waterfall";
+		public virtual string WaterfallTexture => Texture + "_Waterfall";
 
 		protected sealed override void Register()
 		{
@@ -55,19 +39,9 @@ namespace BiomeLava.ModLoader
 		/// <param name="b">The blue component of light, usually a value between 0 and 1</param>
 		public virtual void ModifyLight(int i, int j, ref float r, ref float g, ref float b)
 		{
-			if (LavaLightCall == null)
-			{
-				r = 0.55f;
-				g = 0.33f;
-				b = 0.11f;
-			}
-			else
-			{
-				Vector3 call = LavaLightCall.Invoke(i, j, r, g, b);
-				r = call.X;
-				g = call.Y;
-				b = call.Z;
-			}
+			r = 0.55f;
+			g = 0.33f;
+			b = 0.11f;
 		}
 
 		/// <summary>
@@ -75,15 +49,7 @@ namespace BiomeLava.ModLoader
 		/// </summary>
 		public virtual int GetSplashDust()
 		{
-			if (dustCall == null)
-			{
-				return DustID.Lava;
-			}
-			else
-			{
-				int call = dustCall.Invoke();
-				return call;
-			}
+			return DustID.Lava;
 		}
 
 		/// <summary>
@@ -91,15 +57,7 @@ namespace BiomeLava.ModLoader
 		/// </summary>
 		public virtual int GetDropletGore()
 		{
-			if (goreCall == null)
-			{
-				return GoreID.LavaDrip;
-			}
-			else
-			{
-				int call = goreCall.Invoke();
-				return call;
-			}
+			return GoreID.LavaDrip;
 		}
 
 		/// <summary>
@@ -108,15 +66,7 @@ namespace BiomeLava.ModLoader
 		/// <returns></returns>
 		public virtual bool IsLavaActive()
 		{
-			if (IsActiveCall == null)
-			{
-				return false; 
-			}
-			else
-			{
-				bool call = IsActiveCall.Invoke();
-				return call;
-			}
+			return false;
 		}
 
 		/// <summary>
@@ -125,15 +75,7 @@ namespace BiomeLava.ModLoader
 		/// <returns></returns>
 		public virtual bool LavafallGlowmask()
 		{
-			if (LavafallGlowmaskCall == null)
-			{
-				return true;
-			}
-			else
-			{
-				bool call = LavafallGlowmaskCall.Invoke();
-				return call;
-			}
+			return true;
 		}
 
 		/// <summary>
@@ -142,15 +84,7 @@ namespace BiomeLava.ModLoader
 		/// <returns></returns>
 		public virtual bool InflictsOnFire()
 		{
-			if (InflictsOnFireCall == null)
-			{
-				return false;
-			}
-			else
-			{
-				bool call = InflictsOnFireCall.Invoke();
-				return call;
-			}
+			return false;
 		}
 
 		/// <summary>
@@ -166,35 +100,6 @@ namespace BiomeLava.ModLoader
 		/// <param name="onfireDuration">The duration of the OnFire! debuff. This allows for easy replacement of OnFire</param>
 		public virtual void InflictDebuff(Player player, NPC npc, int onfireDuration)
 		{
-			if (buffCall != null)
-			{
-				buffCall.Invoke(player, npc, onfireDuration);
-			}
 		}
-
-		//Modcall stuff
-		internal string NameCall;
-
-		internal string TextureCall;
-
-		internal string BlockTextureCall;
-
-		internal string SlopeTextureCall;
-
-		internal string WaterfallTextureCall;
-
-		internal Func<int> dustCall;
-
-		internal Func<int> goreCall;
-
-		internal Func<bool> IsActiveCall;
-
-		internal Func<int, int, float, float, float, Vector3> LavaLightCall;
-
-		internal Func<bool> LavafallGlowmaskCall;
-
-		internal Func<Player, NPC, int, Action> buffCall;
-
-		internal Func<bool> InflictsOnFireCall;
 	}
 }
