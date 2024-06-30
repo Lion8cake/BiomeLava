@@ -41,7 +41,7 @@ namespace BiomeLava
 		public static void TilePos(this Tile tile, out int x, out int y)
 		{
 			uint tileId = Unsafe.BitCast<Tile, uint>(tile);
-			x = Math.DivRem((int)tileId, Main.tile.Height, out y); //Thanks to FoxXD_ for the help with this
+			x = Math.DivRem((int)tileId, Main.tile.Height, out y); //Thanks to BasicallyIAmFox for the help with this
 		}
 	}
 }
