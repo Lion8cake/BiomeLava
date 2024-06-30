@@ -1,1 +1,45 @@
-Biome Colored Lava is a pretty cool mod, it does...this. Modify this file with a description of your mod.
+-===============================-
+  Welcome to Biome Colored Lava!
+-===============================-
+
+This mod adds in styles to lava to make lava look different in different biomes similar to how water has its own water styles.
+
+When going into a biome the lava will smoothly transition into a new lava style. These lava styles both look and act differently to the normal purity lava.
+
+Has support for Retro and Trippy lighting
+Has Capture support - ingame screenshot ui (does anyone actually use it?)
+
+When going into a new biome the lava style will change the lava's:
+* Texture
+* Lavafall
+* Light color
+* Splash dust
+* Droplet gore
+* And debuffs (can be turned off via config)
+
+Lava styles not only can be changed by lava but also be changed by waterfountains too for decoration purposes.
+
+Lavastyles added by this mod:
+* Purity (normal)
+* Corruption
+* Crimson
+* Hallow
+* Jungle
+* Snow
+* Desert
+
+For Developers:
+
+This mod also has incredible mod support both with Strong Reference and also by ModCalls.
+You can find out how to implement your own LavaStyle at the wiki found here:
+https://github.com/Lion8cake/BiomeLava/wiki
+
+Please report any issues or suggestions to the github issues also found here:
+https://github.com/Lion8cake/BiomeLava/issues
+
+Credits:
+Lion8cake - Main Programmer & icon, dust and gore artist
+Snickerbobble - Concept creator & sprite artist
+TerrorPenguin - Tarred Sprite artist
+davidfdev - Help with setting up the ModLavaStyle system
+destructor_ben - small contributions
