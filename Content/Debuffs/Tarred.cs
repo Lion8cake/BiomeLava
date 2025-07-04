@@ -9,6 +9,11 @@ namespace BiomeLava.Content.Debuffs
 {
 	public class Tarred : ModBuff
 	{
+		public override bool IsLoadingEnabled(Mod mod)
+		{
+			return ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs;
+		}
+
 		public override string Texture => "BiomeLava/Assets/Jungle/Tarred";
 
 		public override void SetStaticDefaults() {
@@ -66,6 +71,11 @@ namespace BiomeLava.Content.Debuffs
 
 	public class TarredNPC : GlobalNPC
 	{
+		public override bool IsLoadingEnabled(Mod mod)
+		{
+			return ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs;
+		}
+
 		public override bool InstancePerEntity => true;
 
 		public bool tarred;

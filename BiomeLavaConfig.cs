@@ -13,9 +13,8 @@ namespace BiomeLava
 		public override ConfigScope Mode => ConfigScope.ServerSide;
 
 		[Header("BiomeLavaServerConfig")]
-		[Label("Lava style debuffs")]
-		[Tooltip("Some lava styles will inflict different debuff/s apon contact")]
 		[DefaultValue(true)]
+		[ReloadRequired]
 		public bool LavaDebuffs;
 	}
 }

@@ -41,5 +41,6 @@ Credits:
 Lion8cake - Main Programmer & icon, dust and gore artist
 Snickerbobble - Concept creator & sprite artist
 TerrorPenguin - Tarred Sprite artist
+CrimsonCB - Mod Icon
 davidfdev - Help with setting up the ModLavaStyle system
 destructor_ben - small contributions

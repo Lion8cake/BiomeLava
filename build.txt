@@ -1,3 +1,4 @@
 displayName = Biome Colored Lava (Lava Styles)
 author = Lion8cake
 version = 1.0
+sortAfter = AtmosphericLava

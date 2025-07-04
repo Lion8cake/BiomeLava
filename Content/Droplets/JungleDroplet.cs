@@ -118,7 +118,7 @@ namespace BiomeLava.Content.Droplets
 		    num24 = 0.4f * num27; //R
 			num25 = 0.4f * num27; //G
 			num26 = 0.4f * num27; //B
-			Lighting.AddLight(gore.position + new Vector2(8f, 8f), num24, num25, num26);
+			//Lighting.AddLight(gore.position + new Vector2(8f, 8f), num24, num25, num26);
 
 			Vector2 oldVelocity = gore.velocity;
             gore.velocity = Collision.TileCollision(gore.position, gore.velocity, 16, 14);
@@ -153,7 +153,8 @@ namespace BiomeLava.Content.Droplets
 
 		public override Color? GetAlpha(Gore gore, Color lightColor)
 		{
-			return new Color(255, 255, 255, 200);
+            return null;
+			//return new Color(255, 255, 255, 200);
 		}
 	}
 }

@@ -170,6 +170,10 @@ namespace BiomeLava.ModLoader
 			{
 				buffCall.Invoke(player, npc, onfireDuration);
 			}
+			if (buffCallNew != null)
+			{
+				buffCallNew.Invoke(player, npc, onfireDuration);
+			}
 		}
 
 		//Modcall stuff
@@ -194,6 +198,8 @@ namespace BiomeLava.ModLoader
 		internal Func<bool> LavafallGlowmaskCall;
 
 		internal Func<Player, NPC, int, Action> buffCall;
+
+		internal Action<Player, NPC, int> buffCallNew;
 
 		internal Func<bool> InflictsOnFireCall;
 	}

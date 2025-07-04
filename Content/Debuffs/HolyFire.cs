@@ -10,6 +10,11 @@ namespace BiomeLava.Content.Debuffs
 {
 	public class HolyFire : ModBuff
 	{
+		public override bool IsLoadingEnabled(Mod mod)
+		{
+			return ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs;
+		}
+
 		public override string Texture => "BiomeLava/Assets/Hallow/HolyFire";
 
 		public override void SetStaticDefaults() {
@@ -66,6 +71,11 @@ namespace BiomeLava.Content.Debuffs
 
 	public class HolyFireNPC : GlobalNPC
 	{
+		public override bool IsLoadingEnabled(Mod mod)
+		{
+			return ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs;
+		}
+
 		public override bool InstancePerEntity => true;
 
 		public bool holyFire;

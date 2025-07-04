@@ -21,6 +21,8 @@ using BiomeLava.ModLoader;
 using BiomeLava.Content.Droplets;
 using BiomeLava.Content.Bubbles;
 using BiomeLava.Content.Debuffs;
+using static Terraria.Localization.NetworkText;
+using BiomeLava.ModSupport.AtmosphericLava;
 
 namespace BiomeLava
 {
@@ -52,6 +54,8 @@ namespace BiomeLava
 
 		public bool[] lavakeepOnFire = new bool[7];
 
+		public int ActiveLavaFountainColor { get; set; }
+
 		public static BiomeLava instance;
 
 		public override void Load()
@@ -79,12 +83,25 @@ namespace BiomeLava
 			IL_Main.oldDrawWater += BlockRetroLightingLava;
 			IL_LiquidRenderer.InternalPrepareDraw += LavaBubbleReplacer;
 			IL_Player.Update += SplashPlayerLava;
-			IL_NPC.Collision_LavaCollision += LavaDebuffEdits;
+			
+			if (ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs)
+			{
+				IL_Player.Update += PlayerLavaDebuff;
+				IL_NPC.Collision_LavaCollision += LavaDebuffEdits;
+			}
+
 			IL_NPC.Collision_WaterCollision += SplashNPCLava;
 			IL_Projectile.Update += SplashProjectileLava;
 			IL_Item.MoveInWorld += SplashItemLava;
 
 			IL_TileDrawing.EmitLiquidDrops += LavaDropletReplacer;
+
+			if (Terraria.ModLoader.ModLoader.TryGetMod("AtmosphericLava", out _))
+			{
+				On_Gore.NewGore_IEntitySource_Vector2_Vector2_int_float += replaceGore;
+			}
+
+			On_SceneMetrics.Reset += ResetLavaFountainField;
 		}
 
 		public override void Unload()
@@ -112,12 +129,15 @@ namespace BiomeLava
 			IL_Main.oldDrawWater -= BlockRetroLightingLava;
 			IL_LiquidRenderer.InternalPrepareDraw -= LavaBubbleReplacer;
 			IL_Player.Update -= SplashPlayerLava;
+			IL_Player.Update -= PlayerLavaDebuff;
 			IL_NPC.Collision_LavaCollision -= LavaDebuffEdits;
 			IL_NPC.Collision_WaterCollision -= SplashNPCLava;
 			IL_Projectile.Update -= SplashProjectileLava;
 			IL_Item.MoveInWorld -= SplashItemLava;
 
 			IL_TileDrawing.EmitLiquidDrops -= LavaDropletReplacer;
+			On_Gore.NewGore_IEntitySource_Vector2_Vector2_int_float -= replaceGore;
+			On_SceneMetrics.Reset -= ResetLavaFountainField;
 		}
 
 		public override void PostSetupContent()
@@ -186,12 +206,12 @@ namespace BiomeLava
 							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Block");
 							lavaBubbleDust[i] = ModContent.DustType<JungleLavaDust>();
 							lavaDripGore[i] = ModContent.GoreType<JungleDroplet>();
-							lavaLightColor[i] = new Vector3(0.22f, 0.22f, 0.11f);
+							lavaLightColor[i] = new Vector3(0f, 0f, 0f);
 							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Jungle/JungleLava_Waterfall");
 							lavafallGlowmask[i] = false;
 							lavaExtraDebuff[i] = ModContent.BuffType<Tarred>();
 							lavaExtraDebuffLength[i] = 60 * 14;
-							lavakeepOnFire[i] = true;
+							lavakeepOnFire[i] = false;
 							break;
 						case LavaStyleID.Snow:
 							lavaTextures[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Ice/IceLava");
@@ -212,7 +232,7 @@ namespace BiomeLava
 							lavaBlockTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Block");
 							lavaBubbleDust[i] = ModContent.DustType<DesertLavaDust>();
 							lavaDripGore[i] = ModContent.GoreType<IceDroplet>();
-							lavaLightColor[i] = new Vector3(0.77f, 0.44f, 0.11f);
+							lavaLightColor[i] = new Vector3(0.57f, 0.34f, 0.06f);
 							lavaWaterfallTexture[i] = ModContent.Request<Texture2D>("BiomeLava/Assets/Desert/DesertLava_Waterfall");
 							lavafallGlowmask[i] = true;
 							lavaExtraDebuff[i] = BuffID.OnFire;
@@ -221,10 +241,30 @@ namespace BiomeLava
 							break;
 					}
 				}
+				if (Terraria.ModLoader.ModLoader.TryGetMod("AtmosphericLava", out _))
+				{
+					lavaLightColor[LavaStyleID.Purity] = new Vector3(0.55f, 0.1f, 0.05f);
+				}
 			}
 		}
 
 		#region ILEditsandDetours
+		private void ResetLavaFountainField(On_SceneMetrics.orig_Reset orig, SceneMetrics self)
+		{
+			orig.Invoke(self);
+			ActiveLavaFountainColor = -1;
+		}
+
+		private int replaceGore(On_Gore.orig_NewGore_IEntitySource_Vector2_Vector2_int_float orig, Terraria.DataStructures.IEntitySource source, Vector2 Position, Vector2 Velocity, int Type, float Scale)
+		{
+			Terraria.ModLoader.ModLoader.TryGetMod("AtmosphericLava", out Mod mod);
+			if (Type == mod.Find<ModGore>("LavaBubbles").Type)
+			{
+				Type = ModContent.GoreType<LavaBubbles>();
+			}
+			return orig.Invoke(source, Position, Velocity, Type, Scale);
+		}
+
 		private Color WaterfallGlowmaskEditor(On_WaterfallManager.orig_StylizeColor orig, float alpha, int maxSteps, int waterfallType, int y, int s, Tile tileCache, Color aColor)
 		{
 			if (lavafallGlowmask[lavaStyle] == false)
@@ -322,23 +362,6 @@ namespace BiomeLava
 		private void SplashPlayerLava(ILContext il)
 		{
 			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.Before, i => i.MatchLdarg0(), i => i.MatchLdcI4(24), i => i.MatchLdloc(161), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
-			c.EmitLdarg0();
-			c.EmitLdloc(161);
-			c.EmitDelegate((Player player, int onFiretime) =>
-			{
-				if (ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs)
-				{
-					LavaStylesLoader.InflictDebuff(player, null, lavaStyle, onFiretime);
-					if (lavaStyle < LavaStyleID.Count && lavaExtraDebuff[lavaStyle] != BuffID.OnFire)
-					{
-						player.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : onFiretime);
-					}
-				}
-			});
-			//Onfire tamporing
-			c.GotoNext(MoveType.Before, i => i.MatchLdloc(161), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
-			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs ? type : 0);
 			//Dusts
 			c.GotoNext(MoveType.After, i => i.MatchStloc(172), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(), 
 				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8), 
@@ -350,6 +373,25 @@ namespace BiomeLava
 			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
 		}
 
+		private void PlayerLavaDebuff(ILContext il)
+		{
+			ILCursor c = new ILCursor(il);
+			c.GotoNext(MoveType.Before, i => i.MatchLdarg0(), i => i.MatchLdcI4(24), i => i.MatchLdloc(161), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
+			c.EmitLdarg0();
+			c.EmitLdloc(161);
+			c.EmitDelegate((Player player, int onFiretime) =>
+			{
+				LavaStylesLoader.InflictDebuff(player, null, lavaStyle, onFiretime);
+				if (lavaStyle < LavaStyleID.Count && lavaExtraDebuff[lavaStyle] != BuffID.OnFire)
+				{
+					player.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : onFiretime);
+				}
+			});
+			//Onfire tamporing
+			c.GotoNext(MoveType.Before, i => i.MatchLdloc(161), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
+			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] ? type : 0);
+		}
+
 		private void LavaDebuffEdits(ILContext il)
 		{
 			ILCursor c = new(il);
@@ -359,35 +401,33 @@ namespace BiomeLava
 			{
 				if (Main.netMode == NetmodeID.SinglePlayer)
 				{
-					if (ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs)
+					LavaStylesLoader.InflictDebuff(null, npc, lavaStyle, Main.remixWorld && !npc.friendly ? 180 : 420);
+					if (lavaStyle < LavaStyleID.Count && lavaExtraDebuff[lavaStyle] != BuffID.OnFire)
 					{
-						LavaStylesLoader.InflictDebuff(null, npc, lavaStyle, Main.remixWorld && !npc.friendly ? 180 : 420);
-						if (lavaStyle < LavaStyleID.Count && lavaExtraDebuff[lavaStyle] != BuffID.OnFire)
+						if (Main.remixWorld && !npc.friendly)
 						{
-							if (Main.remixWorld && !npc.friendly)
-							{
-								npc.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : 180);
-							}
-							else
-							{
-								npc.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : 420);
-							}
+							npc.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : 180);
+						}
+						else
+						{
+							npc.AddBuff(lavaExtraDebuff[lavaStyle], lavaExtraDebuffLength[lavaStyle] != 0 ? lavaExtraDebuffLength[lavaStyle] : 420);
 						}
 					}
 				}
 			});
 			//Onfire Tamporing
 			c.GotoNext(MoveType.Before, i => i.MatchLdcI4(180), i => i.MatchLdcI4(0), i => i.MatchCall<NPC>("AddBuff"), i => i.MatchBr(out _));
-			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
+			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
 			c.GotoNext(MoveType.Before, i => i.MatchLdcI4(420), i => i.MatchLdcI4(0), i => i.MatchCall<NPC>("AddBuff"), i => i.MatchLdarg0());
-			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || !ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
+			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
 		}
+
+		private static float[] alphaSave = lavaLiquidAlpha.ToArray();
 
 		private void DrawLavatoCapture(ILContext il)
 		{
 			ILCursor c = new ILCursor(il);
 			c.GotoNext(MoveType.After, i => i.MatchLdsfld<Main>("liquidAlpha"), i => i.MatchCall(out _), i => i.MatchStloc2());
-			float[] alphaSave = lavaLiquidAlpha.ToArray();
 			c.EmitDelegate(() => {
 				alphaSave = lavaLiquidAlpha.ToArray();
 			});
@@ -592,6 +632,9 @@ namespace BiomeLava
 				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, null, null, null),
 				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, null, null),
 				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask, Func<Player, NPC, int, Action> BuffID, Func<bool> OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, BuffID, OnFire),
+				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask, Action<Player, NPC, int> BuffID, Func<bool> OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, BuffID, OnFire),
+				["GetActiveLavaFountainColor", ] => ActiveLavaFountainColor,
+				["SetActiveLavaFountainColor", int lavaStyleID] => ActiveLavaFountainColor = lavaStyleID,
 				_ => throw new Exception("BiomeLava: Unknown mod call, make sure you have the correct amount of parameters and those parameters are the correct object!")
 			};
 		}
@@ -601,32 +644,61 @@ namespace BiomeLava
 		{
 			if (!Main.LocalPlayer.ZoneUnderworldHeight)
 			{
-				if (Main.waterStyle == WaterStyleID.Corrupt)
+				if (instance.ActiveLavaFountainColor >= 0)
 				{
-					return 1; //corrupt lava
+					return instance.ActiveLavaFountainColor;
 				}
-				else if (Main.waterStyle == WaterStyleID.Crimson)
+				/*if (Main.SceneMetrics.ActiveFountainColor == WaterStyleID.Corrupt)
 				{
-					return 2; //crimson lava
+					return LavaStyleID.Corrupt; //corrupt lava
 				}
-				else if (Main.waterStyle == WaterStyleID.Hallow)
+				else if (Main.SceneMetrics.ActiveFountainColor == WaterStyleID.Crimson)
 				{
-					return 3; //hallow lava
+					return LavaStyleID.Crimson; //crimson lava
 				}
-				else if (Main.waterStyle == WaterStyleID.Jungle)
+				else if (Main.SceneMetrics.ActiveFountainColor == WaterStyleID.Hallow)
 				{
-					return 4; //Jungle lava
+					return LavaStyleID.Hallow; //hallow lava
 				}
-				else if (Main.waterStyle == WaterStyleID.Snow)
+				else if (Main.SceneMetrics.ActiveFountainColor == WaterStyleID.Jungle)
 				{
-					return 5; //Ice lava
+					return LavaStyleID.Jungle; //Jungle lava
 				}
-				else if (Main.waterStyle == WaterStyleID.Desert || Main.waterStyle == WaterStyleID.UndergroundDesert)
+				else if (Main.SceneMetrics.ActiveFountainColor == WaterStyleID.Snow)
 				{
-					return 6; //Desert lava
+					return LavaStyleID.Snow; //Ice lava
+				}
+				else if (Main.SceneMetrics.ActiveFountainColor == WaterStyleID.Desert || Main.SceneMetrics.ActiveFountainColor == WaterStyleID.UndergroundDesert)
+				{
+					return LavaStyleID.Desert; //Desert lava
+				}*/
+				switch (Main.bgStyle)
+				{
+					case 1:
+						return LavaStyleID.Corrupt;
+					case 5:
+						if (Main.SceneMetrics.EvilTileCount > Main.SceneMetrics.HolyTileCount && Main.SceneMetrics.EvilTileCount > Main.SceneMetrics.BloodTileCount)
+						{
+							return LavaStyleID.Corrupt;
+						}
+						if (Main.SceneMetrics.HolyTileCount > Main.SceneMetrics.BloodTileCount)
+						{
+							return LavaStyleID.Hallow;
+						}
+						return LavaStyleID.Crimson;
+					case 3:
+						return LavaStyleID.Jungle;
+					case 8:
+						return LavaStyleID.Crimson;
+					case 6:
+						return LavaStyleID.Hallow;
+					case 7:
+						return LavaStyleID.Snow;
+					case 2:
+						return LavaStyleID.Desert;
 				}
 			}
-			return 0;
+			return LavaStyleID.Purity;
 		}
 
 		#region LavaDrawing
@@ -711,7 +783,6 @@ namespace BiomeLava
 					{
 						if (ptr2->IsVisible && ptr2->Type == LiquidID.Lava)
 						{
-							float newAlpha = globalAlpha / 2;
 							Rectangle sourceRectangle = ptr2->SourceRectangle;
 							if (ptr2->IsSurfaceLiquid)
 							{

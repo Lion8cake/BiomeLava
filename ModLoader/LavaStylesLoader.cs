@@ -13,14 +13,27 @@ namespace BiomeLava.ModLoader
 {
 	public class LavaStylesLoader : ModSystem
 	{
-		private static readonly MethodInfo ResizeArrayMethodInfo;
+		private static readonly List<ModLavaStyle> _content = [];
 
-		static LavaStylesLoader()
+		public static IReadOnlyList<ModLavaStyle> Content => _content;
+
+		public static int VanillaCount => LavaStyleID.Count;
+
+		public static int ModCount => _content.Count;
+
+		public static int TotalCount => VanillaCount + ModCount;
+
+		public override void Load()
 		{
-			ResizeArrayMethodInfo = typeof(ModContent).GetMethod("ResizeArrays", BindingFlags.NonPublic | BindingFlags.Static);
+			On_ModContent.ResizeArrays += On_ModContent_ResizeArrays;
 		}
 
-		private static void ResizeArrays(ResizeArray_orig orig, bool unloading)
+		public override void Unload()
+		{
+			On_ModContent.ResizeArrays -= On_ModContent_ResizeArrays;
+		}
+
+		private void On_ModContent_ResizeArrays(On_ModContent.orig_ResizeArrays orig, bool unloading = false)
 		{
 			orig.Invoke(unloading);
 			int totalCount = TotalCount;
@@ -35,24 +48,6 @@ namespace BiomeLava.ModLoader
 			Array.Resize(ref BiomeLava.instance.lavaDripGore, totalCount);
 			Array.Resize(ref BiomeLava.instance.lavafallGlowmask, totalCount);
 			Array.Resize(ref BiomeLava.instance.lavakeepOnFire, totalCount);
-		}
-
-		private static readonly List<ModLavaStyle> _content = [];
-
-		public static IReadOnlyList<ModLavaStyle> Content => _content;
-
-		public static int VanillaCount => LavaStyleID.Count;
-
-		public static int ModCount => _content.Count;
-
-		public static int TotalCount => VanillaCount + ModCount;
-
-		public override void Load()
-		{
-			if (ResizeArrayMethodInfo != null)
-			{
-				MonoModHooks.Add(ResizeArrayMethodInfo, ResizeArrays);
-			}
 		}
 
 		public override void PostSetupContent()
@@ -193,6 +188,42 @@ namespace BiomeLava.ModLoader
 				LavaLightCall = lightcolor,
 				LavafallGlowmaskCall = waterfallGlowmask,
 				buffCall = buffID,
+				InflictsOnFireCall = keepOnFire,
+			});
+		}
+
+		public static object ModCalledLava(Mod mod, string lavaStyleName, string texture, string blockTexture, string slopeTexture, string waterfallTexture, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightcolor, Func<bool> IsActive, Func<bool> waterfallGlowmask, Action<Player, NPC, int> buffID, Func<bool> keepOnFire)
+		{
+			if (mod == null)
+			{
+				throw new ArgumentNullException("mod");
+			}
+			if (lavaStyleName == null)
+			{
+				throw new ArgumentNullException("name");
+			}
+			if (texture == null || blockTexture == null || slopeTexture == null || waterfallTexture == null)
+			{
+				throw new ArgumentNullException("texture");
+			}
+			if (!mod.loading)
+			{
+				throw new Exception(Language.GetTextValue("tModLoader.LoadErrorNotLoading"));
+			}
+
+			return mod.AddContent(new ModCallModLavaStyle
+			{
+				NameCall = lavaStyleName,
+				TextureCall = texture,
+				BlockTextureCall = blockTexture,
+				SlopeTextureCall = slopeTexture,
+				WaterfallTextureCall = waterfallTexture,
+				dustCall = DustID,
+				goreCall = GoreID,
+				IsActiveCall = IsActive,
+				LavaLightCall = lightcolor,
+				LavafallGlowmaskCall = waterfallGlowmask,
+				buffCallNew = buffID,
 				InflictsOnFireCall = keepOnFire,
 			});
 		}
