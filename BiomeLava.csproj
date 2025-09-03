@@ -12,4 +12,9 @@
 	  <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.1" PrivateAssets="all" />
 	<Publicize Include="tModLoader" PublicizeTarget="Fields, Types" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="ModLiquidLib">
+      <HintPath>..\ModLiquidLib\bin\Debug\net8.0\ModLiquidLib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

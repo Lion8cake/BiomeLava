@@ -37,6 +37,8 @@ https://github.com/Lion8cake/BiomeLava/wiki
 Please report any issues or suggestions to the github issues also found here:
 https://github.com/Lion8cake/BiomeLava/issues
 
+This mod now uses the ModLiquid Library mod to handle edits to liquids much better.
+
 Credits:
 Lion8cake - Main Programmer & icon, dust and gore artist
 Snickerbobble - Concept creator & sprite artist

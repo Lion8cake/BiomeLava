@@ -1,28 +1,29 @@
-using Microsoft.Xna.Framework;
-using System;
-using Terraria;
-using Terraria.GameContent.Liquid;
-using Terraria.Graphics;
-using Terraria.ModLoader;
-using MonoMod.Cil;
-using Microsoft.Xna.Framework.Graphics;
-using System.Diagnostics;
-using System.Reflection;
-using ReLogic.Content;
-using static Terraria.GameContent.Liquid.LiquidRenderer;
-using Terraria.ID;
-using Terraria.GameContent.Drawing;
-using Terraria.GameContent;
-using Terraria.Graphics.Light;
-using System.Linq;
-using Terraria.Graphics.Capture;
-using static Terraria.WaterfallManager;
-using BiomeLava.ModLoader;
-using BiomeLava.Content.Droplets;
 using BiomeLava.Content.Bubbles;
 using BiomeLava.Content.Debuffs;
-using static Terraria.Localization.NetworkText;
+using BiomeLava.Content.Droplets;
+using BiomeLava.ModLoader;
 using BiomeLava.ModSupport.AtmosphericLava;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Graphics.PackedVector;
+using MonoMod.Cil;
+using ReLogic.Content;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using Terraria;
+using Terraria.GameContent;
+using Terraria.GameContent.Drawing;
+using Terraria.GameContent.Liquid;
+using Terraria.Graphics;
+using Terraria.Graphics.Capture;
+using Terraria.Graphics.Light;
+using Terraria.ID;
+using Terraria.ModLoader;
+using static Terraria.GameContent.Liquid.LiquidRenderer;
+using static Terraria.Localization.NetworkText;
+using static Terraria.WaterfallManager;
 
 namespace BiomeLava
 {
@@ -62,7 +63,6 @@ namespace BiomeLava
 		{
 			instance = this;
 
-			IL_LiquidRenderer.DrawNormalLiquids += BlockLavaDrawing;
 			IL_Main.DoDraw += IL_Main_DoDraw;
 			IL_Main.RenderWater += IL_Main_RenderWater;
 			IL_Main.RenderBackground += IL_Main_RenderBackground;
@@ -73,26 +73,16 @@ namespace BiomeLava
 
 			IL_TileDrawing.Draw += AddTileLiquidDrawing;
 			
-			On_TileLightScanner.ApplyLiquidLight += LavaLightEditor;
-
 			On_WaterfallManager.AddLight += LavafallLightEditor;
 			On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects += LavafallRemover;
 			On_WaterfallManager.Draw += LavaFallRedrawer;
 			On_WaterfallManager.StylizeColor += WaterfallGlowmaskEditor;
-
-			IL_Main.oldDrawWater += BlockRetroLightingLava;
-			IL_LiquidRenderer.InternalPrepareDraw += LavaBubbleReplacer;
-			IL_Player.Update += SplashPlayerLava;
 			
 			if (ModContent.GetInstance<BiomeLavaConfig>().LavaDebuffs)
 			{
 				IL_Player.Update += PlayerLavaDebuff;
 				IL_NPC.Collision_LavaCollision += LavaDebuffEdits;
 			}
-
-			IL_NPC.Collision_WaterCollision += SplashNPCLava;
-			IL_Projectile.Update += SplashProjectileLava;
-			IL_Item.MoveInWorld += SplashItemLava;
 
 			IL_TileDrawing.EmitLiquidDrops += LavaDropletReplacer;
 
@@ -108,7 +98,6 @@ namespace BiomeLava
 		{
 			instance = null;
 
-			IL_LiquidRenderer.DrawNormalLiquids -= BlockLavaDrawing;
 			IL_Main.DoDraw -= IL_Main_DoDraw;
 			IL_Main.RenderWater -= IL_Main_RenderWater;
 			IL_Main.RenderBackground -= IL_Main_RenderBackground;
@@ -119,21 +108,13 @@ namespace BiomeLava
 
 			IL_TileDrawing.Draw -= AddTileLiquidDrawing;
 			
-			On_TileLightScanner.ApplyLiquidLight -= LavaLightEditor;
-
 			On_WaterfallManager.AddLight -= LavafallLightEditor;
 			On_WaterfallManager.DrawWaterfall_int_int_int_float_Vector2_Rectangle_Color_SpriteEffects -= LavafallRemover;
 			On_WaterfallManager.Draw -= LavaFallRedrawer;
 			On_WaterfallManager.StylizeColor -= WaterfallGlowmaskEditor;
 
-			IL_Main.oldDrawWater -= BlockRetroLightingLava;
-			IL_LiquidRenderer.InternalPrepareDraw -= LavaBubbleReplacer;
-			IL_Player.Update -= SplashPlayerLava;
 			IL_Player.Update -= PlayerLavaDebuff;
 			IL_NPC.Collision_LavaCollision -= LavaDebuffEdits;
-			IL_NPC.Collision_WaterCollision -= SplashNPCLava;
-			IL_Projectile.Update -= SplashProjectileLava;
-			IL_Item.MoveInWorld -= SplashItemLava;
 
 			IL_TileDrawing.EmitLiquidDrops -= LavaDropletReplacer;
 			On_Gore.NewGore_IEntitySource_Vector2_Vector2_int_float -= replaceGore;
@@ -320,59 +301,6 @@ namespace BiomeLava
 			c.EmitDelegate<Func<int, int>>(type => lavaDripGore[lavaStyle]);
 		}
 
-		private void SplashItemLava(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.After, i => i.MatchStloc(15), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
-			c.GotoNext(MoveType.After, i => i.MatchStloc(23), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
-		}
-
-		private void SplashProjectileLava(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.After, i => i.MatchStloc(22), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
-			c.GotoNext(MoveType.After, i => i.MatchStloc(30), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
-		}
-
-		private void SplashNPCLava(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.After, i => i.MatchStloc(10), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
-			c.GotoNext(MoveType.After, i => i.MatchStloc(19), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
-		}
-
-		private void SplashPlayerLava(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			//Dusts
-			c.GotoNext(MoveType.After, i => i.MatchStloc(172), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(), 
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8), 
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
-			c.GotoNext(MoveType.After, i => i.MatchStloc(180), i => i.MatchBr(out _), i => i.MatchLdarg0(), i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("X"), i => i.MatchLdcR4(6), i => i.MatchSub(), i => i.MatchLdarg0(),
-				i => i.MatchLdflda<Entity>("position"), i => i.MatchLdfld<Vector2>("Y"), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("height"), i => i.MatchLdcI4(2), i => i.MatchDiv(), i => i.MatchConvR4(), i => i.MatchAdd(), i => i.MatchLdcR4(8),
-				i => i.MatchSub(), i => i.MatchNewobj(out _), i => i.MatchLdarg0(), i => i.MatchLdfld<Entity>("width"), i => i.MatchLdcI4(12), i => i.MatchAdd(), i => i.MatchLdcI4(24), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
-		}
-
 		private void PlayerLavaDebuff(ILContext il)
 		{
 			ILCursor c = new ILCursor(il);
@@ -464,68 +392,6 @@ namespace BiomeLava
 			});
 		}
 
-		private void LavaLightEditor(On_TileLightScanner.orig_ApplyLiquidLight orig, TileLightScanner self, Tile tile, ref Vector3 lightColor)
-		{
-			if (tile.LiquidAmount <= 0)
-			{
-				return;
-			}
-			if (tile.LiquidType == LiquidID.Lava)
-			{
-				float num = lavaLightColor[lavaStyle].X;
-				float num2 = lavaLightColor[lavaStyle].Y;
-				float num3 = lavaLightColor[lavaStyle].Z;
-				LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref num, ref num2, ref num3);
-				for (int j = 0; j < LavaStylesLoader.TotalCount; j++)
-				{
-					if (lavaLiquidAlpha[j] > 0f && j != lavaStyle)
-					{
-						float r = lavaLightColor[j].X;
-						float g = lavaLightColor[j].Y;
-						float b = lavaLightColor[j].Z;
-						LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), j, ref r, ref g, ref b);
-						float r2 = lavaLightColor[lavaStyle].X;
-						float g2 = lavaLightColor[lavaStyle].Y;
-						float b2 = lavaLightColor[lavaStyle].Z;
-						LavaStylesLoader.ModifyLight(tile.X(), tile.Y(), lavaStyle, ref r2, ref g2, ref b2);
-						num = Single.Lerp(r, r2, lavaLiquidAlpha[lavaStyle]);
-						num2 = Single.Lerp(g, g2, lavaLiquidAlpha[lavaStyle]);
-						num3 = Single.Lerp(b, b2, lavaLiquidAlpha[lavaStyle]);
-					}
-				}
-				if (!(num == 0 && num2 == 0 && num3 == 0))
-				{
-					float colorManipulator = (float)(270 - Main.mouseTextColor) / 900f;
-					num += colorManipulator;
-					num2 += colorManipulator;
-					num3 += colorManipulator;
-				}
-				if (lightColor.X < num)
-				{
-					lightColor.X = num;
-				}
-				if (lightColor.Y < num2)
-				{
-					lightColor.Y = num2;
-				}
-				if (lightColor.Z < num3)
-				{
-					lightColor.Z = num3;
-				}
-				return;
-			}
-			orig.Invoke(self, tile, ref lightColor);
-		}
-
-		private void LavaBubbleReplacer(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(16), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type => lavaBubbleDust[lavaStyle]);
-			c.GotoNext(MoveType.After, i => i.MatchLdcI4(16), i => i.MatchLdcI4(8), i => i.MatchLdcI4(35));
-			c.EmitDelegate<Func<int, int>>(type2 => lavaBubbleDust[lavaStyle]);
-		}
-
 		private void BlockLavaDrawingForSlopes(On_TileDrawing.orig_DrawTile_LiquidBehindTile orig, TileDrawing self, bool solidLayer, bool inFrontOfPlayers, int waterStyleOverride, Vector2 screenPosition, Vector2 screenOffset, int tileX, int tileY, Tile tileCache)
 		{
 			Tile tile = Main.tile[tileX + 1, tileY];
@@ -560,35 +426,6 @@ namespace BiomeLava
 			c.EmitDelegate((Microsoft.Xna.Framework.Vector2 unscaledPosition, Microsoft.Xna.Framework.Vector2 vector, int j, int i, Terraria.Tile tile) => {
 				DrawTile_LiquidBehindTile(solidLayer: false, inFrontOfPlayers: false, -1, unscaledPosition, vector, j, i, tile);
 			});
-		}
-
-		private void BlockRetroLightingLava(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			ILLabel l = null;
-			c.GotoNext(MoveType.After, i => i.MatchCgt(), i => i.MatchLdarg1(), i => i.MatchOr(), i => i.MatchBrfalse(out l));
-			if (l == null) return;
-			c.EmitLdloc(12);
-			c.EmitLdloc(11);
-			c.EmitDelegate((int i, int j) => {
-				return Main.tile[i, j].LiquidType == LiquidID.Lava;
-			});
-			c.EmitBrtrue(l);
-		}
-
-		private void BlockLavaDrawing(ILContext il)
-		{
-			ILCursor c = new ILCursor(il);
-			ILLabel IL_0000 = c.DefineLabel();
-			c.GotoNext(MoveType.After, i => i.MatchLdloc2(), i => i.MatchLdfld<LiquidRenderer.LiquidDrawCache>("Type"), i => i.MatchStloc(8));
-			c.EmitLdloc3();
-			c.EmitLdloc(4);
-			c.EmitDelegate((int i, int j) => {
-				return Main.tile[i, j].LiquidType == 1;
-			});
-			c.EmitBrtrue(IL_0000);
-			c.GotoNext(MoveType.Before, i => i.MatchLdloc(2), i => i.MatchSizeof(typeof(LiquidRenderer).GetNestedType("LiquidDrawCache", BindingFlags.NonPublic)), i => i.MatchAdd(), i => i.MatchStloc(2));
-			c.MarkLabel(IL_0000);
 		}
 
 		private void IL_Main_DoDraw(ILContext il)
@@ -722,20 +559,6 @@ namespace BiomeLava
 				}
 				LavaStylesLoader.UpdateLiquidAlphas();
 			}
-			/*if (!Main.drawToScreen && !isBackground) //already called through DrawWaters
-			{
-				Vector2 vector = (Vector2)(Main.drawToScreen ? Vector2.Zero : new Vector2((float)Main.offScreenRange, (float)Main.offScreenRange));
-				int val = (int)((Main.Camera.ScaledPosition.X - vector.X) / 16f - 1f);
-				int val2 = (int)((Main.Camera.ScaledPosition.X + Main.Camera.ScaledSize.X + vector.X) / 16f) + 2;
-				int val3 = (int)((Main.Camera.ScaledPosition.Y - vector.Y) / 16f - 1f);
-				int val4 = (int)((Main.Camera.ScaledPosition.Y + Main.Camera.ScaledSize.Y + vector.Y) / 16f) + 5;
-				val = Math.Max(val, 5) - 2;
-				val3 = Math.Max(val3, 5);
-				val2 = Math.Min(val2, Main.maxTilesX - 5) + 2;
-				val4 = Math.Min(val4, Main.maxTilesY - 5) + 4;
-				Rectangle drawArea = new(val, val3, val2 - val, val4 - val3);
-				//LiquidRenderer.Instance.PrepareDraw(drawArea); //already called
-			}*/
 			bool flag = false;
 			for (int j = 0; j < LavaStylesLoader.TotalCount; j++)
 			{
@@ -852,14 +675,18 @@ namespace BiomeLava
 			{
 				num2 = Main.maxTilesY - 5;
 			}
-			Vector2 vector2;
-			Rectangle value;
-			Color newColor;
+			Vector2 vector2 = default(Vector2);
+			Rectangle value = default(Rectangle);
+			Color newColor = default(Color);
 			for (int i = num32; i < num2 + 4; i++)
 			{
 				for (int j = num30 - 2; j < num31 + 2; j++)
 				{
-					if (Main.tile[j, i].LiquidAmount <= 0 || (Main.tile[j, i].HasUnactuatedTile && Main.tileSolid[Main.tile[j, i].TileType] && !Main.tileSolidTop[Main.tile[j, i].TileType]) || !(Lighting.Brightness(j, i) > 0f || bg) || Main.tile[j, i].LiquidType != LiquidID.Lava)
+					if (Main.tile[j, i].LiquidType != LiquidID.Lava)
+					{
+						continue;
+					}
+					if (Main.tile[j, i].LiquidAmount <= 0 || (Main.tile[j, i].HasUnactuatedTile && Main.tileSolid[Main.tile[j, i].TileType] && !Main.tileSolidTop[Main.tile[j, i].TileType]) || !(Lighting.Brightness(j, i) > 0f || bg))
 					{
 						continue;
 					}
@@ -870,7 +697,7 @@ namespace BiomeLava
 					int num4 = 0;
 					if (Main.tile[j, i].LiquidType == LiquidID.Lava)
 					{
-						/*if (Main.drewLava) //disallows the back liquid to not draw until its alpha hits 1f apparently
+						/*if (Main.drewLava)
 						{
 							continue;
 						}*/
@@ -900,17 +727,21 @@ namespace BiomeLava
 					{
 						num4 = Style;
 					}
-					if (Main.drewLava)
-					{
-						continue;
-					}
 					float num9 = 0.5f;
+					num9 *= 1.8f;
+					if (num9 > 1f)
+					{
+						num9 = 1f;
+					}
 					if (bg)
 					{
 						num9 = 1f;
 					}
-					num9 *= Alpha;
-					Main.DrawTileInWater(-Main.screenPosition + vector, j, i); //lily pads
+					if (num4 != 1 && num4 != 11)
+					{
+						num9 *= Alpha;
+					}
+					Main.DrawTileInWater(-Main.screenPosition + vector, j, i);
 					vector2 = new((float)(j * 16), (float)(i * 16 + (int)num3 * 2));
 					value = new(0, 0, 16, 16 - (int)num3 * 2);
 					bool flag2 = true;
@@ -1006,32 +837,27 @@ namespace BiomeLava
 						if (Main.rand.Next(20000) < num13)
 						{
 							newColor = new(255, 255, 255);
-							int num14 = Dust.NewDust(new Vector2((float)(j * 16), vector2.Y - 2f), 16, 8, DustID.TintableDustLighted, 0f, 0f, 254, newColor, 0.75f);
+							int num14 = Dust.NewDust(new Vector2((float)(j * 16), vector2.Y - 2f), 16, 8, 43, 0f, 0f, 254, newColor, 0.75f);
 							Dust obj = Main.dust[num14];
 							obj.velocity *= 0f;
 						}
 					}
 					if (Main.tile[j, i].LiquidType == LiquidID.Lava)
 					{
-						num9 *= 1.8f;
-						if (num9 > 1f)
-						{
-							num9 = 1f;
-						}
 						if (Main.instance.IsActive && !Main.gamePaused && Dust.lavaBubbles < 200)
 						{
-							if (Main.tile[j, i].LiquidAmount > 200 && Main.rand.NextBool(700))
+							if (Main.tile[j, i].LiquidAmount > 200 && Main.rand.Next(700) == 0)
 							{
-								Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16)), 16, 16, lavaBubbleDust[num4]);
+								Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16)), 16, 16, lavaBubbleDust[lavaStyle]);
 							}
-							if (value.Y == 0 && Main.rand.NextBool(350))
+							if (value.Y == 0 && Main.rand.Next(350) == 0)
 							{
-								int num15 = Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f), 16, 8, lavaBubbleDust[num4], 0f, 0f, 50, default(Color), 1.5f);
+								int num15 = Dust.NewDust(new Vector2((float)(j * 16), (float)(i * 16) + num3 * 2f - 8f), 16, 8, lavaBubbleDust[lavaStyle], 0f, 0f, 50, default(Color), 1.5f);
 								Dust obj2 = Main.dust[num15];
 								obj2.velocity *= 0.8f;
 								Main.dust[num15].velocity.X *= 2f;
 								Main.dust[num15].velocity.Y -= (float)Main.rand.Next(1, 7) * 0.1f;
-								if (Main.rand.NextBool(10))
+								if (Main.rand.Next(10) == 0)
 								{
 									Main.dust[num15].velocity.Y *= Main.rand.Next(2, 5);
 								}
@@ -1051,7 +877,7 @@ namespace BiomeLava
 					if (Lighting.NotRetro && !bg)
 					{
 						Color color2 = color;
-						if (((double)(int)color2.R > (double)num29 * 0.6 || (double)(int)color2.G > (double)num29 * 0.65 || (double)(int)color2.B > (double)num29 * 0.7))
+						if (num4 != 1 && ((double)(int)color2.R > (double)num29 * 0.6 || (double)(int)color2.G > (double)num29 * 0.65 || (double)(int)color2.B > (double)num29 * 0.7))
 						{
 							for (int l = 0; l < 4; l++)
 							{
@@ -1105,11 +931,20 @@ namespace BiomeLava
 									color3 = new(color3.ToVector4() * LiquidRenderer.GetShimmerBaseColor(j, i));
 								}
 								Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + new Vector2((float)num20, (float)num21) + vector, (Rectangle?)new Rectangle(value.X + num20, value.Y + num21, width, height), color3, 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+								if (flag)
+								{
+									Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + new Vector2((float)num20, (float)num21) + vector, (Rectangle?)new Rectangle(value.X + num20, value.Y + num21 + 36, width, height), LiquidRenderer.GetShimmerGlitterColor(flag2, j, i), 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+								}
 							}
 						}
 						else
 						{
 							Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)value, color, 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+							if (flag)
+							{
+								value.Y += 36;
+								Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)value, LiquidRenderer.GetShimmerGlitterColor(flag2, j, i), 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+							}
 						}
 					}
 					else
@@ -1119,6 +954,11 @@ namespace BiomeLava
 							value.X += (int)(Main.wFrame * 18f);
 						}
 						Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)value, color, 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+						if (flag)
+						{
+							value.Y += 36;
+							Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)value, LiquidRenderer.GetShimmerGlitterColor(flag2, j, i), 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+						}
 					}
 					if (!Main.tile[j, i + 1].IsHalfBlock)
 					{
@@ -1130,12 +970,23 @@ namespace BiomeLava
 					num18 = (float)(int)color.B * num9;
 					num19 = (float)(int)color.A * num9;
 					color = new((int)(byte)num16, (int)(byte)num17, (int)(byte)num18, (int)(byte)num19);
+					if (flag)
+					{
+						color = new(color.ToVector4() * LiquidRenderer.GetShimmerBaseColor(j, i));
+					}
 					vector2 = new((float)(j * 16), (float)(i * 16 + 16));
 					Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)new Rectangle(0, 4, 16, 8), color, 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+					if (flag)
+					{
+						Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)new Rectangle(0, 40, 16, 8), LiquidRenderer.GetShimmerGlitterColor(flag2, j, i), 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+					}
 					float num22 = 6f;
 					float num24 = 0.75f;
-					num22 = 4f;
-					num24 = 0.5f;
+					if (num4 == 1 || num4 == 11)
+					{
+						num22 = 4f;
+						num24 = 0.5f;
+					}
 					for (int m = 0; (float)m < num22; m++)
 					{
 						int num25 = i + 2 + m;
@@ -1147,6 +998,10 @@ namespace BiomeLava
 						num26 *= num24;
 						vector2 = new((float)(j * 16), (float)(num25 * 16 - 2));
 						Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)new Rectangle(0, 18, 16, 16), color * num26, 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+						if (flag)
+						{
+							Main.spriteBatch.Draw(lavaBlockTexture[num4].Value, vector2 - Main.screenPosition + vector, (Rectangle?)new Rectangle(0, 54, 16, 16), LiquidRenderer.GetShimmerGlitterColor(flag2, j, i) * num26, 0f, default(Vector2), 1f, (SpriteEffects)0, 0f);
+						}
 					}
 				}
 			}
