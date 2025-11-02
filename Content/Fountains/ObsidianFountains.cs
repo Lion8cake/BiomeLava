@@ -26,7 +26,8 @@ namespace BiomeLava.Content.Fountains
 			TileObjectData.newTile.DrawYOffset = 2;
 			TileObjectData.addTile(Type);
 			AnimationFrameHeight = 72;
-			AddMapEntry(new Color(188, 168, 120));
+			AddMapEntry(new Color(69, 69, 69));
+			DustType = DustID.Asphalt;
 		}
 
 		public override void NearbyEffects(int i, int j, bool closer)

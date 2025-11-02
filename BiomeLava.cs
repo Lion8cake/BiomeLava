@@ -6,6 +6,7 @@ using BiomeLava.ModSupport.AtmosphericLava;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
+using ModLiquidLib.ModLoader;
 using MonoMod.Cil;
 using ReLogic.Content;
 using System;
@@ -417,14 +418,20 @@ namespace BiomeLava
 		private void AddTileLiquidDrawing(ILContext il)
 		{
 			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdarg1(), i => i.MatchLdcI4(0), i => i.MatchLdarg(out int waterStyleOverride), i => i.MatchLdloc1(), i => i.MatchLdloc2(), i => i.MatchLdloc(12), i => i.MatchLdloc(13), i => i.MatchLdloc(14), i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile"));
-			c.EmitLdloc1();
-			c.EmitLdloc2();
-			c.EmitLdloc(12);
-			c.EmitLdloc(13);
-			c.EmitLdloc(14);
-			c.EmitDelegate((Microsoft.Xna.Framework.Vector2 unscaledPosition, Microsoft.Xna.Framework.Vector2 vector, int j, int i, Terraria.Tile tile) => {
-				DrawTile_LiquidBehindTile(solidLayer: false, inFrontOfPlayers: false, -1, unscaledPosition, vector, j, i, tile);
+			int unscaledPos_varNum = -1;
+			int zero_varNum = -1;
+			int i_varNum = -1;
+			int j_varNum = -1;
+			int tile_varNum = -1;
+
+			c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdarg1(), i => i.MatchLdcI4(0), i => i.MatchLdarg(4), i => i.MatchLdloc(out unscaledPos_varNum), i => i.MatchLdloc(out zero_varNum), i => i.MatchLdloc(out i_varNum), i => i.MatchLdloc(out j_varNum), i => i.MatchLdloc(out tile_varNum), i => i.MatchCall<TileDrawing>("DrawTile_LiquidBehindTile"));
+			c.EmitLdloc(unscaledPos_varNum);
+			c.EmitLdloc(zero_varNum);
+			c.EmitLdloc(i_varNum);
+			c.EmitLdloc(j_varNum);
+			c.EmitLdloc(tile_varNum);
+			c.EmitDelegate((Vector2 unscaledPosition, Vector2 vector, int i, int j, Tile tile) => {
+				DrawTile_LiquidBehindTile(solidLayer: false, inFrontOfPlayers: false, -1, unscaledPosition, vector, i, j, tile);
 			});
 		}
 
@@ -470,10 +477,35 @@ namespace BiomeLava
 				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, null, null),
 				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask, Func<Player, NPC, int, Action> BuffID, Func<bool> OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, BuffID, OnFire),
 				["ModLavaStyle", Mod mod, string lavaName, string texture, string block, string slope, string waterfall, Func<int> DustID, Func<int> GoreID, Func<int, int, float, float, float, Vector3> lightColor, Func<bool> IsActive, Func<bool> fallMask, Action<Player, NPC, int> BuffID, Func<bool> OnFire] => LavaStylesLoader.ModCalledLava(mod, lavaName, texture, block, slope, waterfall, DustID, GoreID, lightColor, IsActive, fallMask, BuffID, OnFire),
-				["GetActiveLavaFountainColor", ] => ActiveLavaFountainColor,
+				["GetActiveLavaFountainColor"] => ActiveLavaFountainColor,
 				["SetActiveLavaFountainColor", int lavaStyleID] => ActiveLavaFountainColor = lavaStyleID,
+				["SetActiveLavaFountainColor", Mod mod, string lavaName] => SetModdedLavaFountainColor(mod, lavaName),
+				["GetModLavaStyle", Mod mod, string lavaName] => GetModdedLavaStyle(mod, lavaName),
 				_ => throw new Exception("BiomeLava: Unknown mod call, make sure you have the correct amount of parameters and those parameters are the correct object!")
 			};
+		}
+
+		private object SetModdedLavaFountainColor(Mod mod, string lavaName)
+		{
+			foreach (ModLavaStyle item in LavaStylesLoader.Content)
+			{
+				if (item.Mod.Name == mod.Name && item.Name == lavaName)
+				{
+					ActiveLavaFountainColor = item.Slot;
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static object GetModdedLavaStyle(Mod mod, string lavaName)
+		{
+			foreach (ModLavaStyle item in LavaStylesLoader.Content)
+			{
+				if (item.Mod.Name == mod.Name && item.Name == lavaName)
+					return item.Slot;
+			}
+			throw new Exception("BiomeLava: mod call attempted to find a lava that does not exist, please check spelling between creating and getting the lava");
 		}
 		#endregion
 
