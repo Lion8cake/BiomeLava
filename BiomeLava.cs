@@ -23,6 +23,7 @@ using Terraria.Graphics.Light;
 using Terraria.ID;
 using Terraria.ModLoader;
 using static Terraria.GameContent.Liquid.LiquidRenderer;
+using static Terraria.Graphics.Capture.IL_CaptureBiome.Sets;
 using static Terraria.Localization.NetworkText;
 using static Terraria.WaterfallManager;
 
@@ -267,14 +268,7 @@ namespace BiomeLava
 				float g = lavaLightColor[lavaStyle].Y;
 				float b = lavaLightColor[lavaStyle].Z;
 				LavaStylesLoader.ModifyLight(x, y, lavaStyle, ref r, ref g, ref b);
-				if (!(r == 0 && g == 0 && b == 0))
-				{
-					float r8;
-					float num3 = (r8 = (r + (float)(270 - Main.mouseTextColor) / 900f) * 0.4f);
-					float g8 = num3 * g;
-					float b8 = num3 * b;
-					Lighting.AddLight(x, y, r8, g8, b8);
-				}
+				Lighting.AddLight(x, y, r, g, b);
 				return;
 			}
 			orig.Invoke(waterfallType, x, y);
@@ -613,7 +607,7 @@ namespace BiomeLava
 			Stopwatch stopwatch = new Stopwatch();
 			stopwatch.Start();
 			Vector2 drawOffset = (Vector2)(Main.drawToScreen ? Vector2.Zero : new Vector2((float)Main.offScreenRange, (float)Main.offScreenRange)) - Main.screenPosition;
-			if (bg)
+			if (bg && !LiquidEdgeRenderer.Active)
 			{
 				DrawLiquidBehindTiles(lavaStyle);
 			}
@@ -626,46 +620,45 @@ namespace BiomeLava
 
 		public unsafe void DrawLava(SpriteBatch spriteBatch, Vector2 drawOffset, int LavaStyle, float globalAlpha, bool isBackgroundDraw)
 		{
-			Main.tileBatch.End();
 			Rectangle drawArea = Instance._drawArea;
 			Main.tileBatch.Begin();
 			fixed (LiquidDrawCache* ptr3 = &Instance._drawCache[0])
 			{
 				LiquidDrawCache* ptr2 = ptr3;
-				for (int i = drawArea.X; i < drawArea.X + drawArea.Width; i++)
+				int cacheLength = Instance._drawCache.Length;
+				for (int k = 0; k < cacheLength; k++)
 				{
-					for (int j = drawArea.Y; j < drawArea.Y + drawArea.Height; j++)
+					if (ptr2->IsVisible && ptr2->Type == LiquidID.Lava)
 					{
-						if (ptr2->IsVisible && ptr2->Type == LiquidID.Lava)
+						Rectangle sourceRectangle = ptr2->SourceRectangle;
+						if (ptr2->IsSurfaceLiquid)
 						{
-							Rectangle sourceRectangle = ptr2->SourceRectangle;
-							if (ptr2->IsSurfaceLiquid)
-							{
-								sourceRectangle.Y = 1280;
-							}
-							else
-							{
-								sourceRectangle.Y += Instance._animationFrame * 80;
-							}
-							Vector2 liquidOffset = ptr2->LiquidOffset;
-							float num = ptr2->Opacity * (isBackgroundDraw ? 1f : DEFAULT_OPACITY[ptr2->Type]);
-							int num2 = LavaStyle;
-							num *= globalAlpha;
-							num = Math.Min(1f, num);
-							Lighting.GetCornerColors(i, j, out var vertices);
-							ref Color bottomLeftColor = ref vertices.BottomLeftColor;
-							bottomLeftColor *= num;
-							ref Color bottomRightColor = ref vertices.BottomRightColor;
-							bottomRightColor *= num;
-							ref Color topLeftColor = ref vertices.TopLeftColor;
-							topLeftColor *= num;
-							ref Color topRightColor = ref vertices.TopRightColor;
-							topRightColor *= num;
-							Main.DrawTileInWater(drawOffset, i, j);
-							Main.tileBatch.Draw(lavaTextures[num2].Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle, vertices, Vector2.Zero, 1f, (SpriteEffects)0);
+							sourceRectangle.Y = 1280;
 						}
-						ptr2++;
+						else
+						{
+							sourceRectangle.Y += Instance._animationFrame * 80;
+						}
+						Vector2 liquidOffset = ptr2->LiquidOffset;
+						float num = ptr2->Opacity * (isBackgroundDraw ? 1f : DEFAULT_OPACITY[ptr2->Type]);
+						int num2 = LavaStyle;
+						num *= globalAlpha;
+						int i = ptr2->X + drawArea.X - 2;
+						int j = ptr2->Y + drawArea.Y - 2;
+						num = Math.Min(1f, num);
+						Lighting.GetCornerColors(i, j, out var vertices);
+						ref Color bottomLeftColor = ref vertices.BottomLeftColor;
+						bottomLeftColor *= num;
+						ref Color bottomRightColor = ref vertices.BottomRightColor;
+						bottomRightColor *= num;
+						ref Color topLeftColor = ref vertices.TopLeftColor;
+						topLeftColor *= num;
+						ref Color topRightColor = ref vertices.TopRightColor;
+						topRightColor *= num;
+						Main.DrawTileInWater(drawOffset, i, j);
+						Main.tileBatch.Draw(lavaTextures[num2].Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle, vertices, Vector2.Zero, 1f, (SpriteEffects)0);
 					}
+					ptr2++;
 				}
 			}
 			Main.tileBatch.End();
@@ -1747,7 +1740,7 @@ namespace BiomeLava
 		private void DrawLavafall(int waterfallType, int x, int y, float opacity, Vector2 position, Rectangle sourceRect, Color color, SpriteEffects effects)
 		{
 			Texture2D value = lavaWaterfallTexture[waterfallType].Value;
-			Main.spriteBatch.Draw(value, position, (Rectangle?)sourceRect, color, 0f, default(Vector2), 1f, effects, 0f);
+			Main.spriteBatch.Draw(value, position, (Rectangle?)sourceRect, Lighting.GetColor(x, y) * opacity, 0f, default(Vector2), 1f, effects, 0f);
 		}
 
 		private static float GetLavafallAlpha(float Alpha, int maxSteps, int y, int s, Tile tileCache)
