@@ -7,7 +7,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Graphics.PackedVector;
 using ModLiquidLib.ModLoader;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using rail;
 using ReLogic.Content;
 using System;
 using System.Diagnostics;
@@ -17,6 +19,7 @@ using Terraria;
 using Terraria.GameContent;
 using Terraria.GameContent.Drawing;
 using Terraria.GameContent.Liquid;
+using Terraria.GameContent.RGB;
 using Terraria.Graphics;
 using Terraria.Graphics.Capture;
 using Terraria.Graphics.Light;
@@ -345,46 +348,87 @@ namespace BiomeLava
 			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] || Main.netMode != NetmodeID.SinglePlayer ? type : 0);
 		}
 
-		private static float[] alphaSave = lavaLiquidAlpha.ToArray();
-
 		private void DrawLavatoCapture(ILContext il)
 		{
 			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.After, i => i.MatchLdsfld<Main>("liquidAlpha"), i => i.MatchCall(out _), i => i.MatchStloc2());
-			c.EmitDelegate(() => {
+			VariableDefinition alphaSave_varDef = new(il.Import(typeof(float[])));
+			il.Body.Variables.Add(alphaSave_varDef);
+
+			c.GotoNext(MoveType.After, i => i.MatchLdsfld<Main>("liquidAlpha"), i => i.MatchCall(out _), i => i.MatchStloc(out _));
+			c.Emit(OpCodes.Ldloca, alphaSave_varDef);
+			c.EmitDelegate((ref float[] alphaSave) => {
 				alphaSave = lavaLiquidAlpha.ToArray();
 			});
-			c.GotoNext(MoveType.Before, i => i.MatchLdcI4(0), i => i.MatchStloc(34), i => i.MatchBr(out _), i => i.MatchLdloc(34), i => i.MatchLdcI4(1), i => i.MatchBeq(out _));
-			c.EmitLdloc(8);
-			c.EmitDelegate((CaptureBiome biome) => {
+
+			c.GotoNext(MoveType.After, i => i.MatchLdcR4(0.0f), i => i.MatchStsfld<Main>(nameof(Main.cloudAlpha)));
+			c.EmitLdarg(2);
+			c.EmitDelegate((CaptureSettings settings) => {
+				
 				for (int i = 0; i < 7; i++)
 				{
 					if (i != 1)
 					{
-						lavaLiquidAlpha[i] = ((i == lavaStyle) ? 1f : 0f);
+						lavaLiquidAlpha[i] = ((i == CaptureBiomeToLavaStyle(settings)) ? 1f : 0f);
 					}
 				}
 			});
-			c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(1), i => i.MatchLdsfld<Main>("waterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
+
+			c.GotoNext(MoveType.After, i => i.MatchLdsfld<Main>("waterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
 			c.EmitDelegate(() => {
 				DrawLiquid(bg: true, lavaStyle);
 			});
-			c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(1), i => i.MatchLdsfld<Main>("bloodMoon"), i => i.MatchBrtrue(out _), i => i.MatchLdloc(8), i => i.MatchLdfld<CaptureBiome>("WaterStyle"), i => i.MatchBr(out _), i => i.MatchLdcI4(9), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
-			c.EmitDelegate(() => {
-				DrawLiquid(bg: true, lavaStyle);
+			c.GotoNext(MoveType.After, i => i.MatchLdcI4(9), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
+			c.EmitLdarg(2);
+			c.EmitDelegate((CaptureSettings settings) => {
+				DrawLiquid(bg: true, CaptureBiomeToLavaStyle(settings));
 			});
-			c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(0), i => i.MatchLdsfld<Main>("waterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
+			c.GotoNext(MoveType.After, i => i.MatchLdcI4(0), i => i.MatchLdsfld<Main>("waterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
 			c.EmitDelegate(() => {
 				DrawLiquid(bg: false, lavaStyle);
 			});
-			c.GotoNext(MoveType.After, i => i.MatchLdarg0(), i => i.MatchLdcI4(0), i => i.MatchLdloc(8), i => i.MatchLdfld<CaptureBiome>("WaterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
-			c.EmitDelegate(() => {
-				DrawLiquid(bg: false, lavaStyle);
+			c.GotoNext(MoveType.After, i => i.MatchLdcI4(0), i => i.MatchLdloc(out _), i => i.MatchLdfld<CaptureBiome>("WaterStyle"), i => i.MatchLdcR4(1), i => i.MatchLdcI4(1), i => i.MatchCall<Main>("DrawLiquid"));
+			c.EmitLdarg(2);
+			c.EmitDelegate((CaptureSettings settings) => {
+				DrawLiquid(bg: false, CaptureBiomeToLavaStyle(settings));
 			});
-			c.GotoNext(MoveType.After, i => i.MatchLdloc2(), i => i.MatchStsfld<Main>("liquidAlpha"));
-			c.EmitDelegate(() => {
+			c.GotoNext(MoveType.After, i => i.MatchLdloc(out _), i => i.MatchStsfld<Main>("liquidAlpha"));
+			c.Emit(OpCodes.Ldloc, alphaSave_varDef);
+			c.EmitDelegate((float[] alphaSave) => {
 				lavaLiquidAlpha = alphaSave;
 			});
+		}
+
+		private static int CaptureBiomeToLavaStyle(CaptureSettings settings)
+		{
+			int getLavaStyle = lavaStyle; //Based on the biome's water style
+			switch (settings.Biome.WaterStyle)
+			{
+				case 0:
+					getLavaStyle = LavaStyleID.Purity;
+					break;
+				case 2:
+					getLavaStyle = LavaStyleID.Corrupt;
+					break;
+				case 10:
+					getLavaStyle = LavaStyleID.Crimson;
+					break;
+				case 4:
+					getLavaStyle = LavaStyleID.Hallow;
+					break;
+				case 3:
+					getLavaStyle = LavaStyleID.Jungle;
+					break;
+				case 5:
+					getLavaStyle = LavaStyleID.Snow;
+					break;
+				case 6:
+					getLavaStyle = LavaStyleID.Desert;
+					break;
+				case 12:
+					getLavaStyle = LavaStyleID.Desert;
+					break;
+			}
+			return getLavaStyle;
 		}
 
 		private void BlockLavaDrawingForSlopes(On_TileDrawing.orig_DrawTile_LiquidBehindTile orig, TileDrawing self, bool solidLayer, bool inFrontOfPlayers, int waterStyleOverride, Vector2 screenPosition, Vector2 screenOffset, int tileX, int tileY, Tile tileCache)
@@ -626,39 +670,40 @@ namespace BiomeLava
 			{
 				LiquidDrawCache* ptr2 = ptr3;
 				int cacheLength = Instance._drawCache.Length;
-				for (int k = 0; k < cacheLength; k++)
+				for (int i = drawArea.X; i < drawArea.X + drawArea.Width; i++)
 				{
-					if (ptr2->IsVisible && ptr2->Type == LiquidID.Lava)
+					for (int j = drawArea.Y; j < drawArea.Y + drawArea.Height; j++)
 					{
-						Rectangle sourceRectangle = ptr2->SourceRectangle;
-						if (ptr2->IsSurfaceLiquid)
+						if (ptr2->IsVisible && ptr2->Type == LiquidID.Lava)
 						{
-							sourceRectangle.Y = 1280;
+							Rectangle sourceRectangle = ptr2->SourceRectangle;
+							if (ptr2->IsSurfaceLiquid)
+							{
+								sourceRectangle.Y = 1280;
+							}
+							else
+							{
+								sourceRectangle.Y += Instance._animationFrame * 80;
+							}
+							Vector2 liquidOffset = ptr2->LiquidOffset;
+							float num = ptr2->Opacity * (isBackgroundDraw ? 1f : DEFAULT_OPACITY[ptr2->Type]);
+							int num2 = LavaStyle;
+							num *= globalAlpha;
+							num = Math.Min(1f, num);
+							Lighting.GetCornerColors(i, j, out var vertices);
+							ref Color bottomLeftColor = ref vertices.BottomLeftColor;
+							bottomLeftColor *= num;
+							ref Color bottomRightColor = ref vertices.BottomRightColor;
+							bottomRightColor *= num;
+							ref Color topLeftColor = ref vertices.TopLeftColor;
+							topLeftColor *= num;
+							ref Color topRightColor = ref vertices.TopRightColor;
+							topRightColor *= num;
+							Main.DrawTileInWater(drawOffset, i, j);
+							Main.tileBatch.Draw(lavaTextures[num2].Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle, vertices, Vector2.Zero, 1f, (SpriteEffects)0);
 						}
-						else
-						{
-							sourceRectangle.Y += Instance._animationFrame * 80;
-						}
-						Vector2 liquidOffset = ptr2->LiquidOffset;
-						float num = ptr2->Opacity * (isBackgroundDraw ? 1f : DEFAULT_OPACITY[ptr2->Type]);
-						int num2 = LavaStyle;
-						num *= globalAlpha;
-						int i = ptr2->X + drawArea.X - 2;
-						int j = ptr2->Y + drawArea.Y - 2;
-						num = Math.Min(1f, num);
-						Lighting.GetCornerColors(i, j, out var vertices);
-						ref Color bottomLeftColor = ref vertices.BottomLeftColor;
-						bottomLeftColor *= num;
-						ref Color bottomRightColor = ref vertices.BottomRightColor;
-						bottomRightColor *= num;
-						ref Color topLeftColor = ref vertices.TopLeftColor;
-						topLeftColor *= num;
-						ref Color topRightColor = ref vertices.TopRightColor;
-						topRightColor *= num;
-						Main.DrawTileInWater(drawOffset, i, j);
-						Main.tileBatch.Draw(lavaTextures[num2].Value, new Vector2((float)(i << 4), (float)(j << 4)) + drawOffset + liquidOffset, sourceRectangle, vertices, Vector2.Zero, 1f, (SpriteEffects)0);
+						ptr2++;
 					}
-					ptr2++;
 				}
 			}
 			Main.tileBatch.End();

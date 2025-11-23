@@ -1,0 +1,4 @@
+v1.1.2.4
+
+Fixed using unused X and Y parameters when rendering lava
+Rewrote capture edits which now not only fixes being unable to load the mod, but also issues related to the capture ingame

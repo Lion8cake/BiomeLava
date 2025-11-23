@@ -1,5 +1,5 @@
 displayName = Biome Colored Lava (Lava Styles)
 author = Lion8cake
-version = 1.1.2.2
+version = 1.1.2.4
 sortAfter = AtmosphericLava
 modReferences = ModLiquidLib
