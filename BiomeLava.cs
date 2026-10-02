@@ -302,9 +302,11 @@ namespace BiomeLava
 		private void PlayerLavaDebuff(ILContext il)
 		{
 			ILCursor c = new ILCursor(il);
-			c.GotoNext(MoveType.Before, i => i.MatchLdarg0(), i => i.MatchLdcI4(24), i => i.MatchLdloc(161), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
+			int indexUnknown = -1;
+
+			c.GotoNext(MoveType.Before, i => i.MatchLdarg0(), i => i.MatchLdcI4(BuffID.OnFire), i => i.MatchLdloc(out indexUnknown), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
 			c.EmitLdarg0();
-			c.EmitLdloc(161);
+			c.EmitLdloc(indexUnknown);
 			c.EmitDelegate((Player player, int onFiretime) =>
 			{
 				LavaStylesLoader.InflictDebuff(player, null, lavaStyle, onFiretime);
@@ -314,7 +316,7 @@ namespace BiomeLava
 				}
 			});
 			//Onfire tamporing
-			c.GotoNext(MoveType.Before, i => i.MatchLdloc(161), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
+			c.GotoNext(MoveType.Before, i => i.MatchLdloc(indexUnknown), i => i.MatchLdcI4(1), i => i.MatchLdcI4(0), i => i.MatchCall<Player>("AddBuff"));
 			c.EmitDelegate<Func<int, int>>(type => lavakeepOnFire[lavaStyle] ? type : 0);
 		}
 
